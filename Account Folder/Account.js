@@ -201,3 +201,9 @@ document.getElementById('user_id_select')?.addEventListener('change', function()
         renderSignatureUI(this.value);
     }
 });
+
+/*
+ทำ Limit Image Size ไม่เกิน 50 MB
+ทำ New User
+ทำ ???
+*/
