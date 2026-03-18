@@ -1,0 +1,20 @@
+Options -MultiViews
+RewriteEngine on
+# RewriteCond %{SERVER_PORT} 8080
+# ErrorDocument 404 "HTACCESS_IS_WORKING"
+
+# 1. ถ้ามีคนพิมพ์ .php หรือ .html มา ให้ Redirect ไปแบบ Clean URL (ไม่มีนามสกุล)
+RewriteCond %{THE_REQUEST} \s/([^.]+)\.(html|php) [NC]
+RewriteRule ^([^.]+)\.(html|php)$ /$1 [R=301,L,NC]
+
+# 2. ถ้าพิมพ์แบบไม่มีนามสกุลมา ให้เช็กไฟล์ .php ก่อน
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^(.*)$ $1.php [L]
+
+# 3. ถ้าหา .php ไม่เจอ ให้เช็กไฟล์ .html ต่อ
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}\.html -f
+RewriteRule ^(.*)$ $1.html [L]

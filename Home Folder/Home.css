@@ -1,0 +1,146 @@
+:root{
+    --bg: #82B9F0;
+    --report: #0062FF;
+    --reportHover: #004DC7;
+    --history: #06B6D4;
+    --historyHover: #0891B2;
+    --account: #94A3B8;
+    --accountHover:	#64748B;
+    --problem: #F59E0B;
+    --problemHover:	#D97706;
+    --exit:	#EF4444;
+    --exitHover:#DC2626;
+    --approve: #10B981;
+    --approveHover:	#059669;
+    --fix: #8B5CF6;
+    --fixHover: #7C3AED;
+    --pc: #6366F1;
+    --pcHover: #4F46E5;
+    --finalize: #047857;
+    --finalizeHover: #065F46;
+}
+
+*{
+    font-family: "Prompt", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+html, body{
+    margin: 0;
+    background-color: var(--bg);
+    /* background: linear-gradient(180deg,rgba(130, 185, 240, 1) 60%, rgba(70, 125, 210, 1) 100%); */
+}
+
+#homeSection{max-width: 850px; margin: 0 auto;}
+
+.mainContainer{padding: 30px 0;}
+.itemContainer{
+    background-color: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin: 30px 0px;
+}
+
+#welcomeText{
+    font-size: x-large;
+    margin: 0;
+}
+
+#welcomeTextBR{display: none;}
+
+.buttonContainer{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.button{
+    display: flex;
+    flex-direction: column;
+    color: white;
+    font-size: large;
+    width: 120px;
+    height: 120px;
+    cursor: pointer;
+    border-radius: 10px;
+    padding: 10px;
+    gap: 10px;
+    justify-content: center;
+    line-height: 20px;
+}
+.button i{
+    font-size: x-large;
+    align-self: center;
+}
+
+.describeBoxContainer{
+    display: flex;
+    justify-content: space-between;
+    margin: 15px 0px;
+}
+
+.describeBox{
+    font-size: x-large;
+    padding: 20px;
+    border-radius: 20px;
+    background-color: rgba(11,107,211,0.12);
+    border: 1px solid rgba(11,107,211,0.35);
+    width: 200px;
+    font-size: large;
+}
+
+.describeBoxHeader{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.describeBoxInner{
+    padding: 5px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(11,107,211,0.35);
+    background: #fff; 
+    overflow: auto;
+}
+
+#report{background-color: var(--report); border: 1px solid var(--report);}
+#report:hover{background-color: var(--reportHover); border: 1px solid var var(--reportHover);}
+#history{background-color: var(--history); border: 1px solid var(--history);}
+#history:hover{background-color: var(--historyHover); border: 1px solid var var(--historyHover);}
+#account{background-color: var(--account); border: 1px solid var(--account);}
+#account:hover{background-color: var(--accountHover); border: 1px solid var var(--accountHover);}
+#problem{background-color: var(--problem); border: 1px solid var(--problem);}
+#problem:hover{background-color: var(--problemHover); border: 1px solid var var(--problemHover);}
+#exit{background-color: var(--exit); border: 1px solid var(--exit);}
+#exit:hover{background-color: var(--exitHover); border: 1px solid var var(--exitHover);}
+
+@media screen and (max-width: 875px){
+    .mainContainer{padding: 20px;}
+    .describeBoxContainer{flex-direction: column; gap: 10px;}
+    .describeBox{
+        width: stretch;
+        display: flex;
+        align-items: center;
+        padding: 5px;
+        border-radius: 10px;
+        font-size: 15px;
+    }
+    .describeBoxHeader{gap: 5px; width: 33%;}
+    .describeBoxInner{width: 65%;}
+}
+@media screen and (max-width: 510px){
+    #welcomeText{font-size: larger;}
+    #welcomeTextBR{display: block;}
+    .buttonContainer{gap: 10px;}
+    .button{width: 80px; 
+        height: 80px; 
+        font-size: small; 
+        padding: 5; 
+        gap: 5px; 
+        line-height: 15px;
+    }
+    .button i{font-size: medium}
+    .describeBoxHeader{width: 45%;}
+    .describeBoxInner{width: 50%;}
+}

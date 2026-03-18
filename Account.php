@@ -1,0 +1,439 @@
+<?php
+include 'Supabase.php';
+include 'Bucket.php';
+session_start();
+
+// เช็คความปลอดภัย: ถ้าไม่ได้ Login ให้เด้งกลับไปหน้า login.php
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header("Location: login.php");
+    exit;
+}
+
+// 2. ดึงข้อมูล User
+$logged_user  = $_SESSION['user_id'];
+$data = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($logged_user) . "&select=*");
+$user = (!empty($data)) ? $data[0] : null;
+
+$datas = []; 
+$users = [];
+$computers = [];
+$userSigMap = [];
+
+if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'){
+    $datas = supabase_query("/rest/v1/Users?select=*") ?? [];
+    $users = array_column($datas, 'User_ID');
+    $computers = supabase_query("/rest/v1/Computer?select=*") ?? [];
+    foreach ($datas as $row) {
+        $userSigMap[$row['User_ID']] = $row['Signature'] ?? null;
+    }
+}
+$sigJson = htmlspecialchars(json_encode($userSigMap), ENT_QUOTES, 'UTF-8');
+
+$all_sections = ['IT', 'AC', 'HR', 'PUR', 'SALES', 'PC', 'PJ&System', 'ENG-PE', 'QA-QC', 'MT', 'Production'];
+$all_roles = ['User', 'HoD', 'IT', 'IT_Director'];
+
+// ตั้งค่าเริ่มต้นให้ทุกอย่างเป็นเท็จ
+$error_empty = false;
+$error_wrong_pass = false;
+$error_mismatch = false;
+$error_match_pass = false;
+$error_noimage = false;
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") { 
+    if (isset($_POST['update_profile'])) {
+        $user_id = $_POST['user_id'] ?? $user['User_ID'];
+        // หาข้อมูลของคนที่จะถูกอัปเดตจาก $datas
+        $key = array_search($user_id, array_column($datas ?? [], 'User_ID'));
+        // ถ้าหาเจอใน $datas ให้ใช้ค่านั้น ถ้าไม่เจอ (เช่น User แก้ตัวเอง) ให้ใช้ $user
+        $target_user = ($key !== false) ? $datas[$key] : $user;
+
+        $dataRaw = [
+            "Firstname"    => $_POST['firstname'] ?? null,
+            "Lastname"     => $_POST['lastname'] ?? null,
+            "Section"      => $_POST['section'] ?? null,
+            "Role"         => $_POST['role'] ?? null,
+            "Equipment_ID" => ($_POST['equipment_id'] !== "") ? $_POST['equipment_id'] : null,
+            "ComUsername"  => $_POST['comusername'] ?? null,
+        ];
+        // รายการที่ยอมให้ส่ง null ไปเพื่อ "ล้างค่า" ใน DB
+        $allowNull = ["Equipment_ID"];
+        // เอาค่าที่ไม่ได้ส่งออก
+        $dataInput = array_filter($dataRaw, function($value, $key) use ($user) {
+            // กฎข้อที่ 1: ถ้ามีค่าจริง (ไม่ใช่ null และไม่ใช่ "") -> ให้ส่งไปอัปเดตเสมอ
+            if ($value !== null && $value !== '') {return true;}
+            // กฎข้อที่ 2: ถ้าค่าเป็น null (เลือก "ไม่มี") เฉพาะ Equipment_ID
+            if ($value === null && $key === "Equipment_ID") {
+                // เช็คว่าคนแก้คือ "IT" หรือไม่ (ควรเช็คตัวเล็กตัวใหญ่ด้วย strtolower)
+                if (isset($user['Role']) && strtoupper($user['Role']) === 'IT') {return true;} // IT สามารถส่ง null ไป "ล้างค่า" ใน Database ได้ 
+                else {return false;} // คนอื่นที่ไม่ใช่ IT ให้ "ดีดออก" เพื่อคงค่าเดิมใน DB ไว้
+            }
+            // นอกเหนือจากนั้น (เช่น ฟิลด์อื่นๆ ที่เป็น null) -> ให้ดีดทิ้ง (ไม่ส่งไป Patch)
+            return false;
+        }, ARRAY_FILTER_USE_BOTH);
+        
+        // ใช้ PATCH ไปยังตารางของคุณ
+        
+        $status = 0; 
+        supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $dataInput, $status);
+
+        if ($status === 200 || $status === 204) {$_SESSION['flash_message'] = "แก้ไขข้อมูลผู้ใช้สำเร็จ";} 
+        else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
+
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
+    }
+
+    if (isset($_POST['change_password'])) {
+        $user_id = $_POST['user_id'] ?? $user['User_ID'];
+        $oldPass = $_POST['oldPass'] ?? '';
+        $newPass = $_POST['newPass'] ?? '';
+        $confirmPass = $_POST['confirmPass'] ?? '';
+
+        // หาข้อมูลของคนที่จะถูกอัปเดตจาก $datas
+        $key = array_search($user_id, array_column($datas ?? [], 'User_ID'));
+        // ถ้าหาเจอใน $datas ให้ใช้ค่านั้น ถ้าไม่เจอ (เช่น User แก้ตัวเอง) ให้ใช้ $user
+        $target_user = ($key !== false) ? $datas[$key] : $user;
+
+        if (empty(trim($oldPass)) || empty(trim($newPass)) || empty(trim($confirmPass))) {$error_empty = true;} 
+        elseif (!password_verify($oldPass, $target_user['Password'])) {$error_wrong_pass = true;}
+        elseif ($newPass !== $confirmPass) {$error_mismatch = true;}
+        elseif (password_verify($newPass, $target_user['Password'])) {$error_match_pass = true;}
+        else {
+            $data = [
+                "Password" => password_hash($_POST['newPass'], PASSWORD_DEFAULT),
+            ];
+            
+            $status = 0; 
+            supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $data, $status);
+
+            if ($status === 200 || $status === 204) {$_SESSION['flash_message'] = "แก้ไขรหัสผ่านสำเร็จ";} 
+            else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
+            
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
+        }
+    }
+
+    if (isset($_POST['upload_signature'])) {
+        $user_id = $_POST['user_id'] ?? $user['User_ID'];
+        // หาข้อมูลของคนที่จะถูกอัปเดตจาก $datas
+        $key = array_search($user_id, array_column($datas ?? [], 'User_ID'));
+        // ถ้าหาเจอใน $datas ให้ใช้ค่านั้น ถ้าไม่เจอ (เช่น User แก้ตัวเอง) ให้ใช้ $user
+        $target_user = ($key !== false) ? $datas[$key] : $user;
+
+        if (!isset($_FILES['signature']) || $_FILES['signature']['error'] === UPLOAD_ERR_NO_FILE) {$error_noimage = true;}
+        else{
+            $signature = $_FILES['signature'];
+            $link = uploadSignature($user_id, $signature);
+            if($link['success']){
+                $data = ["Signature" => $link['url']];
+                
+                $status = 0; 
+                supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $data, $status);
+                
+                if ($status === 200 || $status === 204) {$_SESSION['flash_message'] = "แก้ไขลายเซ็นสำเร็จ";} 
+                else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
+            }
+            else{
+                $status = $result['status'];
+                $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัพโหลดรูปภาพ (Status: $status)";
+            }
+
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
+        }
+    }
+
+    if (isset($_POST['delete_signature'])) {
+        $user_id = $_POST['user_id'] ?? $user['User_ID'];
+        // หาข้อมูลของคนที่จะถูกอัปเดตจาก $datas
+        $key = array_search($user_id, array_column($datas ?? [], 'User_ID'));
+        // ถ้าหาเจอใน $datas ให้ใช้ค่านั้น ถ้าไม่เจอ (เช่น User แก้ตัวเอง) ให้ใช้ $user
+        $target_user = ($key !== false) ? $datas[$key] : $user;
+        // ดึง URL ปัจจุบันจาก $target_user มาเช็ค
+        $current_url = $target_user['Signature'] ?? null;
+
+        if (!empty($current_url)) {
+            // 1. ลบไฟล์ใน Storage
+            $deleteStatus = deleteSignatureByUserId($user_id);
+
+            // 2. อัปเดต Database ให้ Signature เป็น NULL
+            if($deleteStatus["success"] || $deleteStatus["status"] == 404){
+                $data = ["Signature" => null];
+                $status = 0;
+                supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($user_id), "PATCH", $data, $status);
+
+                if ($status === 200 || $status === 204) {$_SESSION['flash_message'] = "ลบลายเซ็นสำเร็จ";} 
+                else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัปเดตฐานข้อมูล (Status: $status)";}
+            }
+            else{
+                $status = $deleteStatus['status'];
+                $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการลบรูปภาพ (Status: $status)";
+            }
+        }
+
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
+    }
+}
+
+?>
+
+<!DOCTYPE php>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account</title>
+    <link rel="icon" type="image/x-icon" href="../- Image/BEW-Logo.ico">
+    
+    <link rel="stylesheet" href="Account Folder/Account.css">
+    <link rel="stylesheet" href="- Navbar/NavBar.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <main>
+        <nav class="nav">
+            <div class="nav-inner">
+                <div class="brand">
+                    <img src="../- Image/BEW Logo.png" alt="logo" id="imgLogo">
+                    ระบบแจ้งปัญหา IT
+                </div>
+                <div class="hamburger" id="hamburger">
+                    <p id="menuText" style="margin:0px;">เมนูทั้งหมด</p>
+                    <i class="fa-solid fa-bars" style="font-size: 18px;"></i>
+                </div>
+                <div class="nav-links" id="navLinks">
+                    <a href="Home" class="nav-link">หน้าหลัก</a>
+                    <a href="IT Request Form" class="nav-link">ใบขอแจ้งซ่อม</a>
+                    <a href="" class="nav-link">ประวัติการแจ้งซ่อม</a>
+                    <a href="Account" class="nav-link active">แก้ไขข้อมูลผู้ใช้</a>
+                    <form action="Logout.php" method="POST" style="margin: 0;">
+                        <button class="nav-link" id="logoutMenu" type="submit" name="logout">ออกจากระบบ</button>
+                    </form> 
+                </div>
+            </div>
+        </nav>
+
+        <section id="accountSection">
+            <div class="mainContainer">
+                <div class="itemContainer">
+                    <?php if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'): ?>
+                        <div class="headerText">ตัวเลือกการแก้ไข</div>
+                        <div class="formItemContainer">
+                            <form action="" id="" class="formContainer">
+                                <div class="formItemRow" id="radioFormRow">
+                                    <div class="formLabel" id="radioFormLabel">ตัวเลือกการแก้ไข</div>
+                                    <div class="formInput" id="radioFormInput">
+                                        <div class="radioInput">
+                                            <input type="radio" id="editAccount" name="account" value="EditAccount" onclick="NewUser(false)" checked><label for="editAccount">แก้ไขข้อมูลผู้ใช้</label>
+                                        </div>
+                                        <div class="radioInput">
+                                            <input type="radio" id="newAccount" name="account" value="NewAccount" onclick="NewUser(true)"><label for="newAccount">สร้างผู้ใช้งานใหม่</label>
+                                        </div>   
+                                    </div>    
+                                </div>
+                            </form>
+                        </div>
+
+                        <hr style="margin:25px 0; border: 1px solid #e2e8f0">
+                    <?php endif; ?>
+
+                    <?php if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'): ?>
+                        <div class="headerText">รหัสผู้ใช้</div>
+                        <div class="formItemContainer">
+                            <div class="formItemRow">
+                                <label class="formLabel" for="user_id">รหัสผู้ใช้</label>
+                                <select id="user_id_select" name="user_id_select" class="formInput">
+                                    <?php foreach ($users as $eachdata): ?>
+                                            <option value="<?= $eachdata ?>" <?= ($eachdata == $user['User_ID']) ? 'selected' : '' ?>>
+                                                <?= $eachdata  ?>
+                                            </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <input class="formInput" type="text" name="user_id" id="user_id" placeholder="รหัสผู้ใช้" value="<?php echo htmlspecialchars($user['User_ID'] ?? ''); ?>" style="display:none;">
+                            </div>
+                        </div>
+                    
+                        <hr style="margin:25px 0; border: 1px solid #e2e8f0"> 
+                    <?php endif; ?>
+
+                    <div class="headerText">แก้ไขข้อมูลผู้ใช้</div>
+                    <form action="" id="nameForm" method="POST" class="formContainer" onsubmit="getUserData(this, '<?php echo $user['User_ID'] ?>'); return confirm('ยืนยันการเปลี่ยนแปลงข้อมูลหรือไม่?');">
+                        <input type="hidden" name="user_id">
+                        <div class="formItemContainer">
+                            <div class="formItemRow">
+                                <label class="formLabel" for="firstname">ชื่อ</label>
+                                <input class="formInput" type="text" name="firstname" id="firstname" placeholder="ชื่อ" value="<?php echo htmlspecialchars($user['Firstname'] ?? ''); ?>">
+                            </div>
+                            <div class="formItemRow">
+                                <label class="formLabel" for="lastname">นามสกุล</label>
+                                <input class="formInput" type="text" name="lastname" id="lastname" placeholder="นามสกุล" value="<?php echo htmlspecialchars($user['Lastname'] ?? ''); ?>">
+                            </div>
+                            <?php if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'): ?>
+                                <div class="formItemRow">
+                                    <label class="formLabel" for="section">แผนก</label>
+                                    <select id="section" name="section" class="formInput">
+                                        <option value="" hidden>ไม่มี</option>
+                                        <?php foreach ($all_sections as $section): ?>
+                                            <option value="<?= $section ?>" <?= ($section == $user['Section']) ? 'selected' : '' ?>>
+                                                <?= $section ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="formItemRow">
+                                    <label class="formLabel" for="role">บทบาท</label>
+                                    <select id="role" name="role" class="formInput">
+                                        <?php foreach ($all_roles as $role): ?>
+                                            <option value="" hidden>ไม่มี</option>
+                                            <option value="<?= $role ?>" <?= ($role == $user['Role']) ? 'selected' : '' ?>>
+                                                <?= $role ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="formItemRow">
+                                    <label class="formLabel" for="equipment_id">คอมพิวเตอร์</label>
+                                    <select id="equipment_id" name="equipment_id" class="formInput">
+                                        <option value="">ไม่มี</option>
+                                        <?php foreach ($computers as $computer): ?>
+                                            <?php if ($computer['Section'] == $user['Section'] || $computer['Equipment_ID'] == $user['Equipment_ID']): ?>
+                                                <option value="<?= $computer['Equipment_ID'] ?>" <?= ($computer['Equipment_ID'] == $user['Equipment_ID']) ? 'selected' : '' ?>>
+                                                    <?= $computer['Equipment_ID'] ?>
+                                                </option>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            <?php endif; ?>
+                            <div class="formItemRow">
+                                <label class="formLabel" for="comusername">ชื่อโปรไฟล์</label>
+                                <input class="formInput" type="text" name="comusername" id="comusername" placeholder="ชื่อโปรไฟล์" value="<?php echo htmlspecialchars($user['ComUsername'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <button type="submit" value="Submit" class="button" id="nameButton" name="update_profile">
+                            <i class="fa-solid fa-pen"></i>
+                            <p class="buttonLabel">แก้ไขข้อมูลผู้ใช้</p>
+                        </button>
+                    </form>
+                    
+                    <hr style="margin:25px 0; border: 1px solid #e2e8f0">       
+                    
+                    <?php if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'): ?>
+                        <div class="headerText">แก้ไขรหัสผ่าน</div>
+                        <form action="" method="POST" id="passForm" class="formContainer" onsubmit="getUserData(this, '<?php echo $user['User_ID'] ?>')">
+                            <input type="hidden" name="user_id">
+                            <div class="formItemContainer">
+                                <div class="formItemRow" id="oldPassRow">
+                                    <label class="formLabel" for="oldPass">รหัสผ่านปัจจุบัน</label>
+                                    <div class="formInput">
+                                        <input class="formPassInput" type="password" name="oldPass" id="oldPass" placeholder="รหัสผ่านปัจจุบัน">
+                                        <button class="passwordbutton" type="button" 
+                                            onmousedown="showPass('oldPass','oldPassEye')" 
+                                            onmouseup="hidePass('oldPass','oldPassEye')" 
+                                            onmouseleave="hidePass('oldPass','oldPassEye')"
+                                            ontouchstart="showPass('oldPass','oldPassEye')" 
+                                            ontouchend="hidePass('oldPass','oldPassEye')">
+                                            <i id="oldPassEye" class="fa-solid fa-eye-slash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="formItemRow">
+                                    <label class="formLabel" for="newPass">รหัสผ่านใหม่</label>
+                                    <div class="formInput">
+                                        <input class="formPassInput" type="password" name="newPass" id="newPass" placeholder="รหัสผ่านใหม่">
+                                        <button class="passwordbutton" type="button" 
+                                            onmousedown="showPass('newPass','newPassEye')" 
+                                            onmouseup="hidePass('newPass','newPassEye')" 
+                                            onmouseleave="hidePass('newPass','newPassEye')"
+                                            ontouchstart="showPass('newPass','newPassEye')" 
+                                            ontouchend="hidePass('newPass','newPassEye')">
+                                            <i id="newPassEye" class="fa-solid fa-eye-slash"></i></button>
+                                    </div>
+                                </div>
+                                <div class="formItemRow">
+                                    <label class="formLabel" for="confirmPass">ยืนยันรหัสผ่าน</label>
+                                    <div class="formInput">
+                                        <input class="formPassInput" type="password" name="confirmPass" id="confirmPass" placeholder="ยืนยันรหัสผ่าน">
+                                        <button class="passwordbutton" type="button" 
+                                            onmousedown="showPass('confirmPass','confirmPassEye')" 
+                                            onmouseup="hidePass('confirmPass','confirmPassEye')" 
+                                            onmouseleave="hidePass('confirmPass','confirmPassEye')"
+                                            ontouchstart="showPass('confirmPass','confirmPassEye')" 
+                                            ontouchend="hidePass('confirmPass','confirmPassEye')">
+                                            <i id="confirmPassEye" class="fa-solid fa-eye-slash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="checkedText" id="check1" <?= $error_empty ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> กรุณากรอกฟอร์มที่กำหนดให้ครบทุกช่อง</p>
+                            <p class="checkedText" id="check2" <?= $error_wrong_pass ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> รหัสผ่านไม่ถูกต้อง</p>
+                            <p class="checkedText" id="check3" <?= $error_mismatch ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> กรุณายืนยันรหัสผ่านให้ตรงกัน</p>
+                            <p class="checkedText" id="check4" <?= $error_match_pass ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> รหัสผ่านใหม่ต้องไม่ตรงกับรหัสผ่านปัจจุบัน</p>
+                            <button type="submit" value="Submit" class="button" id="passButton" name="change_password">
+                                <i class="fa-solid fa-key"></i>
+                                <p class="buttonLabel">แก้ไขรหัสผ่าน</p>
+                            </button>
+                        </form>
+
+                        <hr style="margin:25px 0; border: 1px solid #e2e8f0">       
+                    <?php endif; ?>
+
+                    <div class="headerText">แก้ไขลายเซ็น</div>
+                    <form action="" method="POST" class="formContainer" id="signatureForm" enctype="multipart/form-data" data-signatures='<?= $sigJson ?>' onsubmit="getUserData(this, '<?php echo $user['User_ID'] ?>')">
+                        <input type="hidden" name="user_id">
+                        <div class="formItemContainer">
+                            <div class="formItemRow">
+                                <label class="formLabel" <?= !empty($user['Signature']) ? '' : 'for="signature"' ?> id="signatureLabel">ลายเซ็น</label>
+                                <div id="signatureContainer" class="formInput">
+                                    <?php if (!empty($user['Signature'])): ?>
+                                        <img src="<?= $user['Signature'] ?>" style="max-height: 80px; display: block;">
+                                    <?php else: ?>
+                                        <input type="file" id="signature" name="signature" style="width: 100%;" accept="image/*" />
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="checkedText" id="checkSignature" <?= $error_noimage ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> กรุณาอัพโหลดลายเซ็นของคุณ</p>
+                        <?php if (!empty($user['Signature'])): ?>
+                            <button type="submit" value="Submit" class="button" id="deleteSignatureButton" name="delete_signature">
+                                <i class="fa-solid fa-trash"></i>
+                                <p class="buttonLabel">ลบลายเซ็น</p>
+                            </button>
+                        <?php else: ?>
+                            <button type="submit" value="Submit" class="button" id="signatureButton" name="upload_signature">
+                                <i class="fa-solid fa-file-signature"></i>
+                                <p class="buttonLabel">อัพโหลดลายเซ็น</p>
+                            </button>
+                        <?php endif; ?>
+                    </form>
+                </div>
+            </div>
+        </section>
+    
+    </main>
+    <script src="- Navbar/NavBar.js"></script>
+    <script src="Account Folder/Account.js"></script>
+
+    <?php if (isset($_SESSION['flash_message'])): ?>
+        <script>
+            // รอให้เบราว์เซอร์โหลด HTML และวาดหน้าจอ (Render) ให้เสร็จก่อน
+            window.onload = function() {
+                // หน่วงเวลาอีก 100-200ms เพื่อให้แน่ใจว่าหน้าเว็บแสดงผลครบแล้วค่อยเด้ง
+                setTimeout(function() {
+                    alert("<?php echo $_SESSION['flash_message']; ?>");
+                }, 100);
+            };
+        </script>
+    <?php 
+        unset($_SESSION['flash_message']); // ลบข้อความทิ้ง ไม่ให้เด้งซ้ำตอนกด refresh เอง
+    endif; 
+    ?>
+
+</body>
+</html>
