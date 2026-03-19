@@ -90,6 +90,9 @@ html, body{
 #deleteSignatureButton{border: 1px solid var(--red); background-color: var(--red); cursor: pointer;}
 #deleteSignatureButton i, #deleteSignatureButton p {color: white;}
 #deleteSignatureButton:hover{border: 1px solid var(--darkred); background-color: var(--darkred);}
+#newUserButton{border: 1px solid var(--blue); background-color: var(--blue); cursor: pointer;}
+#newUserButton i, #newUserButton p {color: white;}
+#newUserButton:hover{border: 1px solid var(--darkblue); background-color: var(--darkblue);}
 
 
 input, select, textarea{

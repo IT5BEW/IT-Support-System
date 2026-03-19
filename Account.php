@@ -18,6 +18,7 @@ $datas = [];
 $users = [];
 $computers = [];
 $userSigMap = [];
+$userMap = [];
 
 if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'){
     $datas = supabase_query("/rest/v1/Users?select=*") ?? [];
@@ -26,8 +27,19 @@ if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'){
     foreach ($datas as $row) {
         $userSigMap[$row['User_ID']] = $row['Signature'] ?? null;
     }
+    foreach ($datas as $u) {
+        $userMap[$u['User_ID']] = [
+            'Firstname' => $u['Firstname'] ?? '',
+            'Lastname' => $u['Lastname'] ?? '',
+            'Section' => $u['Section'] ?? '',
+            'Role' => $u['Role'] ?? '',
+            'Equipment_ID' => $u['Equipment_ID'] ?? '',
+            'ComUsername' => $u['ComUsername'] ?? ''
+        ];
+    }
 }
 $sigJson = htmlspecialchars(json_encode($userSigMap), ENT_QUOTES, 'UTF-8');
+$userJson = htmlspecialchars(json_encode($userMap), ENT_QUOTES, 'UTF-8');
 
 $all_sections = ['IT', 'AC', 'HR', 'PUR', 'SALES', 'PC', 'PJ&System', 'ENG-PE', 'QA-QC', 'MT', 'Production'];
 $all_roles = ['User', 'HoD', 'IT', 'IT_Director'];
@@ -38,6 +50,9 @@ $error_wrong_pass = false;
 $error_mismatch = false;
 $error_match_pass = false;
 $error_noimage = false;
+$error_bigimage = false;
+$error_nameempty = false;
+$error_useridempty = false;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") { 
     if (isset($_POST['update_profile'])) {
@@ -53,16 +68,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             "Section"      => $_POST['section'] ?? null,
             "Role"         => $_POST['role'] ?? null,
             "Equipment_ID" => ($_POST['equipment_id'] !== "") ? $_POST['equipment_id'] : null,
-            "ComUsername"  => $_POST['comusername'] ?? null,
+            "ComUsername"  => ($_POST['comusername'] !== "") ? $_POST['comusername'] : null,
         ];
         // รายการที่ยอมให้ส่ง null ไปเพื่อ "ล้างค่า" ใน DB
-        $allowNull = ["Equipment_ID"];
+        $allowNull = ["Equipment_ID", "ComUsername"];
         // เอาค่าที่ไม่ได้ส่งออก
-        $dataInput = array_filter($dataRaw, function($value, $key) use ($user) {
+        $dataInput = array_filter($dataRaw, function($value, $key) use ($user, $allowNull) {
             // กฎข้อที่ 1: ถ้ามีค่าจริง (ไม่ใช่ null และไม่ใช่ "") -> ให้ส่งไปอัปเดตเสมอ
             if ($value !== null && $value !== '') {return true;}
-            // กฎข้อที่ 2: ถ้าค่าเป็น null (เลือก "ไม่มี") เฉพาะ Equipment_ID
-            if ($value === null && $key === "Equipment_ID") {
+            // กฎข้อที่ 2: ถ้าค่าเป็น 
+            if ($value === null && in_array($key, $allowNull)) {
                 // เช็คว่าคนแก้คือ "IT" หรือไม่ (ควรเช็คตัวเล็กตัวใหญ่ด้วย strtolower)
                 if (isset($user['Role']) && strtoupper($user['Role']) === 'IT') {return true;} // IT สามารถส่ง null ไป "ล้างค่า" ใน Database ได้ 
                 else {return false;} // คนอื่นที่ไม่ใช่ IT ให้ "ดีดออก" เพื่อคงค่าเดิมใน DB ไว้
@@ -76,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $status = 0; 
         supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $dataInput, $status);
 
-        if ($status === 200 || $status === 204) {$_SESSION['flash_message'] = "แก้ไขข้อมูลผู้ใช้สำเร็จ";} 
+        if ($status === 200 || $status === 204 || $status === 201) {$_SESSION['flash_message'] = "แก้ไขข้อมูลผู้ใช้สำเร็จ";} 
         else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
 
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -106,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $status = 0; 
             supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $data, $status);
 
-            if ($status === 200 || $status === 204) {$_SESSION['flash_message'] = "แก้ไขรหัสผ่านสำเร็จ";} 
+            if ($status === 200 || $status === 204 || $status === 201) {$_SESSION['flash_message'] = "แก้ไขรหัสผ่านสำเร็จ";} 
             else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
             
             header("Location: " . $_SERVER['PHP_SELF']);
@@ -120,8 +135,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $key = array_search($user_id, array_column($datas ?? [], 'User_ID'));
         // ถ้าหาเจอใน $datas ให้ใช้ค่านั้น ถ้าไม่เจอ (เช่น User แก้ตัวเอง) ให้ใช้ $user
         $target_user = ($key !== false) ? $datas[$key] : $user;
+        // 50 MB ในหน่วย Bytes
+        $maxSize = 50 * 1024 * 1024;
+        $allowedExtensions = ['png', 'jpg', 'jpeg', 'webp'];
 
         if (!isset($_FILES['signature']) || $_FILES['signature']['error'] === UPLOAD_ERR_NO_FILE) {$error_noimage = true;}
+        elseif ($_FILES['signature']['size'] > $maxSize) {$error_bigimage = true;}
+        elseif (!in_array(strtolower(pathinfo($_FILES['signature']['name'], PATHINFO_EXTENSION)), $allowedExtensions)) {
+            $_SESSION['flash_message'] = "ผิดพลาด: อนุญาตเฉพาะไฟล์ " . implode(', ', $allowedExtensions) . " เท่านั้น";
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
+        }
         else{
             $signature = $_FILES['signature'];
             $link = uploadSignature($user_id, $signature);
@@ -131,11 +155,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $status = 0; 
                 supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $data, $status);
                 
-                if ($status === 200 || $status === 204) {$_SESSION['flash_message'] = "แก้ไขลายเซ็นสำเร็จ";} 
+                if ($status === 200 || $status === 204 || $status === 201) {$_SESSION['flash_message'] = "แก้ไขลายเซ็นสำเร็จ";} 
                 else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
             }
             else{
-                $status = $result['status'];
+                $status = $link['status'];
                 $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัพโหลดรูปภาพ (Status: $status)";
             }
 
@@ -163,7 +187,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $status = 0;
                 supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($user_id), "PATCH", $data, $status);
 
-                if ($status === 200 || $status === 204) {$_SESSION['flash_message'] = "ลบลายเซ็นสำเร็จ";} 
+                if ($status === 200 || $status === 204 || $status === 201) {$_SESSION['flash_message'] = "ลบลายเซ็นสำเร็จ";} 
                 else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัปเดตฐานข้อมูล (Status: $status)";}
             }
             else{
@@ -174,6 +198,90 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         header("Location: " . $_SERVER['PHP_SELF']);
         exit;
+    }
+
+    if (isset($_POST['create_new_user'])) {
+        $user_id      = $_POST['user_id'] ?? '';
+        $firstname    = $_POST['firstname'] ?? '';
+        $lastname     = $_POST['lastname'] ?? '';
+        $section      = $_POST['section'] ?? '';
+        $role         = $_POST['role'] ?? '';
+        $newPass      = $_POST['newPass'] ?? '';
+        $confirmPass  = $_POST['confirmPass'] ?? ''; // รับมาเพื่อเช็ค mismatch
+        $equipment_id = !empty($_POST['equipment_id']) ? $_POST['equipment_id'] : null;
+        $comusername  = !empty($_POST['comusername']) ? $_POST['comusername'] : null;
+
+        $maxSize = 50 * 1024 * 1024; // 50MB
+        $allowedExtensions = ['png', 'jpg', 'jpeg', 'webp'];
+        $hasFile = isset($_FILES['signature']) && $_FILES['signature']['error'] !== UPLOAD_ERR_NO_FILE;
+
+
+        // 2. ลำดับการตรวจสอบ (Validation)
+        if (empty(trim($user_id))) {
+            $error_useridempty = true; // รหัสผู้ใช้ห้ามว่าง
+        } 
+        elseif (in_array($user_id, $users)) {
+            $_SESSION['flash_message'] = "ผิดพลาด: รหัสผู้ใช้นี้มีอยู่ในระบบแล้ว";
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit; // รหัสผู้ใช้ซ้ำกับที่มีในระบบ
+        }
+        elseif (empty(trim($firstname)) || empty(trim($lastname)) || empty(trim($section)) || empty(trim($role))) {
+            $error_nameempty = true; // ชื่อ-แผนก-บทบาท ห้ามว่าง
+        } 
+        elseif (empty(trim($newPass))) {
+            $error_empty = true; // รหัสผ่านใหม่ห้ามว่าง
+        }
+        elseif ($newPass !== $confirmPass) {
+            $error_mismatch = true; // รหัสผ่านไม่ตรงกัน
+        }
+        // เช็คกรณีมีไฟล์: ขนาด และ นามสกุล
+        elseif ($hasFile && $_FILES['signature']['size'] > $maxSize) {
+            $error_bigimage = true;
+        } 
+        elseif ($hasFile && !in_array(strtolower(pathinfo($_FILES['signature']['name'], PATHINFO_EXTENSION)), $allowedExtensions)) {
+            $_SESSION['flash_message'] = "ผิดพลาด: อนุญาตเฉพาะไฟล์ " . implode(', ', $allowedExtensions) . " เท่านั้น";
+        }
+        else {
+            // 3. ผ่านทุกเงื่อนไข: เริ่มขั้นตอนอัปโหลดและบันทึก
+            $signature_url = null; // เริ่มต้นเป็น null
+
+            if (isset($_FILES['signature']) && $_FILES['signature']['error'] === UPLOAD_ERR_OK) {
+                $link = uploadSignature($user_id, $_FILES['signature']);
+                if ($link['success']) {
+                    $signature_url = $link['url'];
+                } 
+                else {
+                    $status = $link['status'];
+                    $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ (Status: $status)";
+                    header("Location: " . $_SERVER['PHP_SELF']);
+                    exit;
+                }
+            }
+
+            $data = [
+                "User_ID"      => $user_id,
+                "Firstname"    => $firstname,
+                "Lastname"     => $lastname,
+                "Section"      => $section,
+                "Role"         => $role,
+                "Password"     => password_hash($newPass, PASSWORD_DEFAULT),
+                "Equipment_ID" => $equipment_id,
+                "ComUsername"  => $comusername,
+                "Signature"    => $signature_url // จะเป็น URL หรือ null ก็ได้ตามที่เราตั้งไว้
+            ];
+
+            $status = 0;
+            supabase_query("/rest/v1/Users", "POST", $data, $status);
+
+            if ($status === 201 || $status === 200 || $status === 204) {
+                $_SESSION['flash_message'] = "สร้างผู้ใช้งานสำเร็จ";
+                header("Location: " . $_SERVER['PHP_SELF']);
+                exit;
+            } 
+            else {
+                $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";
+            }
+        }
     }
 }
 
@@ -250,21 +358,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="formItemRow">
                                 <label class="formLabel" for="user_id">รหัสผู้ใช้</label>
                                 <select id="user_id_select" name="user_id_select" class="formInput">
+                                    <?php sort($users); $myId = $user['User_ID']; ?>
+                                    <option value="<?= $myId ?>" selected><?= $myId ?></option>
                                     <?php foreach ($users as $eachdata): ?>
-                                            <option value="<?= $eachdata ?>" <?= ($eachdata == $user['User_ID']) ? 'selected' : '' ?>>
-                                                <?= $eachdata  ?>
-                                            </option>
+                                        <?php if ($eachdata == $myId) continue; ?>
+                                        <option value="<?= $eachdata ?>"><?= $eachdata ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <input class="formInput" type="text" name="user_id" id="user_id" placeholder="รหัสผู้ใช้" value="<?php echo htmlspecialchars($user['User_ID'] ?? ''); ?>" style="display:none;">
+                                <input class="formInput" type="text" name="user_id" id="user_id" placeholder="รหัสผู้ใช้" style="display:none;">
                             </div>
                         </div>
+                        <p class="checkedText" id="checkUserID" <?= $error_nameempty ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> รหัสผู้ใช้ต้องไม่เป็นค่าว่าง</p>
                     
                         <hr style="margin:25px 0; border: 1px solid #e2e8f0"> 
                     <?php endif; ?>
 
                     <div class="headerText">แก้ไขข้อมูลผู้ใช้</div>
-                    <form action="" id="nameForm" method="POST" class="formContainer" onsubmit="getUserData(this, '<?php echo $user['User_ID'] ?>'); return confirm('ยืนยันการเปลี่ยนแปลงข้อมูลหรือไม่?');">
+                    <form action="" id="nameForm" method="POST" class="formContainer" data-users='<?= $userJson ?>' onsubmit="getUserData(this, '<?php echo $user['User_ID'] ?>'); return confirm('ยืนยันการเปลี่ยนแปลงข้อมูลหรือไม่?');">
                         <input type="hidden" name="user_id">
                         <div class="formItemContainer">
                             <div class="formItemRow">
@@ -317,6 +427,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <input class="formInput" type="text" name="comusername" id="comusername" placeholder="ชื่อโปรไฟล์" value="<?php echo htmlspecialchars($user['ComUsername'] ?? ''); ?>">
                             </div>
                         </div>
+                        <p class="checkedText" id="checkName" <?= $error_nameempty ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> ชื่อ นามสกุล แผนก และบทบาท ต้องไม่เป็นค่าว่าง</p>
                         <button type="submit" value="Submit" class="button" id="nameButton" name="update_profile">
                             <i class="fa-solid fa-pen"></i>
                             <p class="buttonLabel">แก้ไขข้อมูลผู้ใช้</p>
@@ -400,6 +511,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
                         </div>
                         <p class="checkedText" id="checkSignature" <?= $error_noimage ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> กรุณาอัพโหลดลายเซ็นของคุณ</p>
+                        <p class="checkedText" id="checkSignatureSize" <?= $error_bigimage ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> ลายเซ็นของคุณมีขนาดใหญ่เกินไป (ขนาดต้องไม่เกิน 50MB)</p>
                         <?php if (!empty($user['Signature'])): ?>
                             <button type="submit" value="Submit" class="button" id="deleteSignatureButton" name="delete_signature">
                                 <i class="fa-solid fa-trash"></i>
@@ -411,6 +523,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <p class="buttonLabel">อัพโหลดลายเซ็น</p>
                             </button>
                         <?php endif; ?>
+                    </form>
+                    <form action="" method="POST" class="formContainer" id="newUserForm" enctype="multipart/form-data" >
+                        <div id="fileContainer" style="display: none;"></div>
+                        <button type="submit" value="Submit" class="button" id="newUserButton" name="create_new_user" style="display: none;">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <p class="buttonLabel">สร้างผู้ใช้งานใหม่</p>
+                        </button>
                     </form>
                 </div>
             </div>

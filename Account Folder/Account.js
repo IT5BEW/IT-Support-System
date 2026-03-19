@@ -61,6 +61,7 @@ function NewUser(newUser) {
     const delBtn = document.getElementById('deleteSignatureButton');
     const oldPass = document.getElementById('oldPassRow');
     const nameForm = document.getElementById('nameForm');
+    const newUserBtn = document.getElementById('newUserButton');
 
     if (newUser) {
         // ใช้ if เช็คว่ามี element นั้นจริงไหมก่อนสั่ง style
@@ -72,6 +73,7 @@ function NewUser(newUser) {
         if (sigBtn) sigBtn.style.display = 'none';
         if (delBtn) delBtn.style.display = 'none';
         if (oldPass) oldPass.style.display = 'none';
+        if (newUserBtn) newUserBtn.style.display = 'flex';
 
         if (typeof resetNameForm === "function") resetNameForm();
         
@@ -85,6 +87,7 @@ function NewUser(newUser) {
         if (nameBtn) nameBtn.style.display = 'flex';
         if (passBtn) passBtn.style.display = 'flex';
         if (oldPass) oldPass.style.display = 'flex';
+        if (newUserBtn) newUserBtn.style.display = 'none';
         
         // หมายเหตุ: sigBtn จะถูกสั่งโชว์/ซ่อนอัตโนมัติข้างใน renderSignatureUI
         if (nameForm) nameForm.reset();
@@ -129,8 +132,12 @@ function getUserData(formElement, user_id_from_php) {
 }
 
 document.getElementById("signatureForm")?.addEventListener("submit", function(event) {
-    const p = document.getElementById("checkSignature");
-    p.hidden = true;
+    const p1 = document.getElementById("checkSignature");
+    const p2 = document.getElementById("checkSignatureSize");
+    
+    // ซ่อน Error เก่าก่อนเริ่มเช็คใหม่
+    p1.hidden = p2.hidden = true;
+
     const signature = document.getElementById("signature");
 
     const isDeleteAction = event.submitter && event.submitter.name === 'delete_signature';
@@ -143,9 +150,18 @@ document.getElementById("signatureForm")?.addEventListener("submit", function(ev
     }
 
     if (signature.files.length === 0) {
-        p.hidden = false; // แสดง "กรุณากรอกให้ครบ"
+        p1.hidden = false; // แสดง "กรุณากรอกให้ครบ"
         event.preventDefault();
         return;
+    }
+    if (signature.files.length > 0) {
+        const fileSize = signature.files[0].size;
+        const maxSize = 50 * 1024 * 1024;
+        if (fileSize > maxSize) {
+            p2.hidden = false;
+            event.preventDefault(); // สั่งระงับการส่งฟอร์ม (Stop Form Submission)
+            return;
+        }
     }
 
     if (!confirm('ยืนยันการเปลี่ยนลายเซ็นหรือไม่?')) {
@@ -198,12 +214,134 @@ function renderSignatureUI(userId, forceInput = false) {
 
 document.getElementById('user_id_select')?.addEventListener('change', function() {
     if (this.style.display !== 'none') {
+        renderUserInfo(this.value);      // เปลี่ยนข้อมูลชื่อ/แผนก
         renderSignatureUI(this.value);
     }
 });
 
+document.getElementById('newUserForm').addEventListener('submit', function(e) {
+    // 1. ปิด Error ทั้งหมดก่อนเริ่มเช็คใหม่
+    const errorIds = ['checkUserID', 'checkName', 'check1', 'check3', 'checkSignature', 'checkSignatureSize'];
+    errorIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.hidden = true;
+    });
+
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    let hasError = false;
+
+    // --- ดึงข้อมูลจากจุดต่างๆ ---
+    const userId = document.getElementById('user_id').value.trim();
+    const firstname = document.querySelector('#nameForm [name="firstname"]').value.trim();
+    const lastname = document.querySelector('#nameForm [name="lastname"]').value.trim();
+    const section = document.querySelector('#nameForm [name="section"]').value;
+    const role = document.querySelector('#nameForm [name="role"]').value;
+    const newPass = document.querySelector('#passForm [name="newPass"]').value;
+    const confirmPass = document.querySelector('#passForm [name="confirmPass"]').value;
+    const sigInput = document.getElementById('signature');
+
+    // --- 2. Validation 6 เงื่อนไข ---
+    if (!userId) {
+        document.getElementById('checkUserID').hidden = false;
+        hasError = true;
+    }
+
+    if (!firstname || !lastname || !section || !role) {
+        document.getElementById('checkName').hidden = false;
+        hasError = true;
+    }
+
+    if (!newPass || !confirmPass) {
+        document.getElementById('check1').hidden = false;
+        hasError = true;
+    } else if (newPass !== confirmPass) {
+        document.getElementById('check3').hidden = false;
+        hasError = true;
+    }
+
+    if (sigInput && sigInput.files.length > 0) {
+        if (sigInput.files[0].size > maxSize) {
+            document.getElementById('checkSignatureSize').hidden = false;
+            hasError = true;
+        }
+    }
+
+    // หยุดการทำงานหากมี Error
+    if (hasError) {
+        const firstError = document.querySelector('.checkedText:not([hidden])');
+        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        e.preventDefault();
+        return;
+    }
+
+    // --- 3. ยืนยันการเพิ่มผู้ใช้งาน ---
+    if (!confirm('ยืนยันการเพิ่มผู้ใช้งานหรือไม่?')) {
+        e.preventDefault();
+        return;
+    }
+
+    // ---  การย้ายไฟล์ (จุดสำคัญ) ---
+    const fileContainer = document.getElementById('fileContainer'); // ที่พักใน newUserForm
+
+    if (sigInput && sigInput.files.length > 0) {
+        fileContainer.appendChild(sigInput);
+    }
+
+    // --- 4. ถ้าผ่านหมด ให้รวบรวมค่าจากฟอร์มอื่นมาใส่ใน Hidden Input ของฟอร์มนี้ ---
+    const targetForm = this;
+    const appendHidden = (name, value) => {
+        let input = targetForm.querySelector(`input[name="${name}"]`);
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            targetForm.appendChild(input);
+        }
+        input.value = value;
+    };
+
+    appendHidden('user_id', userId);
+    appendHidden('firstname', firstname);
+    appendHidden('lastname', lastname);
+    appendHidden('section', section);
+    appendHidden('role', role);
+    appendHidden('newPass', newPass);
+    appendHidden('confirmPass', confirmPass);
+    appendHidden('equipment_id', document.querySelector('#nameForm [name="equipment_id"]').value || '');
+    appendHidden('comusername', document.querySelector('#nameForm [name="comusername"]').value || '');
+    appendHidden('create_new_user', '1');
+
+    // หมายเหตุ: ไฟล์จาก sigInput จะถูกส่งไปพร้อมฟอร์มปกติหากคุณใช้การ Submit 
+    // โดยย้ายตัว <input type="file"> เข้ามาใน #newUserForm หรือใช้วิธี DataTransfer
+});
+
+function renderUserInfo(userId) {
+    const form = document.getElementById('nameForm');
+    if (!form) return;
+
+    // ดึงข้อมูล User จาก data-users ที่เราเตรียมไว้ใน PHP
+    const userMap = JSON.parse(form.getAttribute('data-users') || '{}');
+    const userData = userMap[userId];
+
+    if (userData) {
+        // หยอดค่าลง Input Text
+        if (form.querySelector('[name="firstname"]')) form.querySelector('[name="firstname"]').value = userData.Firstname;
+        if (form.querySelector('[name="lastname"]')) form.querySelector('[name="lastname"]').value = userData.Lastname;
+        if (form.querySelector('[name="comusername"]')) form.querySelector('[name="comusername"]').value = userData.ComUsername;
+
+        // หยอดค่าลง Select (เช็ค element ก่อนเพราะบาง Role อาจไม่เห็นฟิลด์เหล่านี้)
+        const sectionSelect = form.querySelector('[name="section"]');
+        const roleSelect = form.querySelector('[name="role"]');
+        const equipSelect = form.querySelector('[name="equipment_id"]');
+
+        if (sectionSelect) sectionSelect.value = userData.Section || '';
+        if (roleSelect) roleSelect.value = userData.Role || '';
+        if (equipSelect) equipSelect.value = userData.Equipment_ID || '';
+    }
+}
+
 /*
-ทำ Limit Image Size ไม่เกิน 50 MB
-ทำ New User
-ทำ ???
+เปลี่ยนให้เลือกคอมได้เฉพาะแผนกที่อยู่เท่านั้น
+https://share.google/aimode/F3FJWqV4XXb3glHou
+limit select option length?
 */
