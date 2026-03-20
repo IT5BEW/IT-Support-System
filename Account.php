@@ -504,7 +504,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <label class="formLabel" <?= !empty($user['Signature']) ? '' : 'for="signature"' ?> id="signatureLabel">ลายเซ็น</label>
                                 <div id="signatureContainer" class="formInput">
                                     <?php if (!empty($user['Signature'])): ?>
-                                        <img src="<?= $user['Signature'] ?>" style="max-height: 80px; display: block;">
+                                        <img src="<?= $user['Signature'] ?>" style="max-height: 80px; display: block; max-width: 225px;">
                                     <?php else: ?>
                                         <input type="file" id="signature" name="signature" style="width: 100%; height: auto;" accept="image/*" />
                                     <?php endif; ?>

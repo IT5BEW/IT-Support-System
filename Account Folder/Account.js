@@ -213,7 +213,7 @@ function renderSignatureUI(userId, forceInput = false) {
 
     if (sigUrl) {
         // --- กรณีมีรูปในระบบ ---
-        container.innerHTML = `<img src="${sigUrl}" style="max-height: 80px; display: block; margin-bottom: 5px;">`;
+        container.innerHTML = `<img src="${sigUrl}" style="max-height: 80px; display: block; max-width: 225px;">`;
         label.removeAttribute('for'); 
         if (sigButton) sigButton.style.display = 'none'; 
         if (delButton) delButton.style.display = 'flex'; // โชว์ปุ่มลบ
