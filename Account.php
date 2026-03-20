@@ -358,7 +358,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="formItemContainer">
                             <div class="formItemRow">
                                 <label class="formLabel" for="user_id">รหัสผู้ใช้</label>
-                                <select id="user_id_select" name="user_id_select" class="formInput">
+                                <select id="user_id_select" name="user_id_select" class="formInput" onfocus="this.size=10;" onblur="this.size=1;" onchange="this.size=1; this.blur();">
                                     <?php sort($users); $myId = $user['User_ID']; ?>
                                     <option value="<?= $myId ?>" selected><?= $myId ?></option>
                                     <?php foreach ($users as $eachdata): ?>
@@ -500,32 +500,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <form action="" method="POST" class="formContainer" id="signatureForm" enctype="multipart/form-data" data-signatures='<?= $sigJson ?>' onsubmit="getUserData(this, '<?php echo $user['User_ID'] ?>')">
                         <input type="hidden" name="user_id">
                         <div class="formItemContainer">
-                            <div class="formItemRow">
+                            <div class="formItemRow" style="height: auto;">
                                 <label class="formLabel" <?= !empty($user['Signature']) ? '' : 'for="signature"' ?> id="signatureLabel">ลายเซ็น</label>
                                 <div id="signatureContainer" class="formInput">
                                     <?php if (!empty($user['Signature'])): ?>
                                         <img src="<?= $user['Signature'] ?>" style="max-height: 80px; display: block;">
                                     <?php else: ?>
-                                        <input type="file" id="signature" name="signature" style="width: 100%;" accept="image/*" />
+                                        <input type="file" id="signature" name="signature" style="width: 100%; height: auto;" accept="image/*" />
                                     <?php endif; ?>
                                 </div>
                             </div>
                         </div>
                         <p class="checkedText" id="checkSignature" <?= $error_noimage ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> กรุณาอัพโหลดลายเซ็นของคุณ</p>
                         <p class="checkedText" id="checkSignatureSize" <?= $error_bigimage ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> ลายเซ็นของคุณมีขนาดใหญ่เกินไป (ขนาดต้องไม่เกิน 50MB)</p>
-                        <?php if (!empty($user['Signature'])): ?>
-                            <button type="submit" value="Submit" class="button" id="deleteSignatureButton" name="delete_signature">
-                                <i class="fa-solid fa-trash"></i>
-                                <p class="buttonLabel">ลบลายเซ็น</p>
-                            </button>
-                        <?php else: ?>
-                            <button type="submit" value="Submit" class="button" id="signatureButton" name="upload_signature">
-                                <i class="fa-solid fa-file-signature"></i>
-                                <p class="buttonLabel">อัพโหลดลายเซ็น</p>
-                            </button>
-                        <?php endif; ?>
+                        <button type="submit" value="Submit" class="button" id="deleteSignatureButton" name="delete_signature" style="<?= !empty($user['Signature']) ? 'display: flex;' : 'display: none;' ?>">
+                            <i class="fa-solid fa-trash"></i>
+                            <p class="buttonLabel">ลบลายเซ็น</p>
+                        </button>
+                        <button type="submit" value="Submit" class="button" id="signatureButton" name="upload_signature" style="<?= !empty($user['Signature']) ? 'display: none;' : 'display: flex;' ?>">
+                            <i class="fa-solid fa-file-signature"></i>
+                            <p class="buttonLabel">อัพโหลดลายเซ็น</p>
+                        </button>
                     </form>
-                    <form action="" method="POST" class="formContainer" id="newUserForm" enctype="multipart/form-data" >
+                    <form action="" method="POST" class="formContainer" id="newUserForm" enctype="multipart/form-data">
                         <div id="fileContainer" style="display: none;"></div>
                         <button type="submit" value="Submit" class="button" id="newUserButton" name="create_new_user" style="display: none;">
                             <i class="fa-solid fa-user-plus"></i>

@@ -71,8 +71,6 @@ function NewUser(newUser) {
         
         if (nameBtn) nameBtn.style.display = 'none';
         if (passBtn) passBtn.style.display = 'none';
-        if (sigBtn) sigBtn.style.display = 'none';
-        if (delBtn) delBtn.style.display = 'none';
         if (oldPass) oldPass.style.display = 'none';
         if (newUserBtn) newUserBtn.style.display = 'flex';
 
@@ -102,6 +100,8 @@ function NewUser(newUser) {
         const currentId = userSelect ? userSelect.value : (userInput ? userInput.value : null);
         if (currentId && typeof renderUserInfo === "function") {renderUserInfo(currentId); } 
         else {updateComputerList("", "", false);}
+        
+        // เรียกใช้เพื่อให้เช็คว่า User คนนี้มีลายเซ็นเก่าหรือไม่
         renderSignatureUI(currentId);
 
         document.getElementById('checkUserID').hidden = true;
@@ -205,24 +205,30 @@ function renderSignatureUI(userId, forceInput = false) {
     
     if (!form || !container) return;
 
+    // 1. เช็คโหมด New User (ใช้ radio 'newAccount' จะแม่นยำที่สุด)
+    const isNewUserActive = document.getElementById('newAccount')?.checked || false;
+    
     const sigMap = JSON.parse(form.getAttribute('data-signatures') || '{}');
-    const sigUrl = forceInput ? null : sigMap[userId];
+    const sigUrl = (forceInput || isNewUserActive) ? null : sigMap[userId];
 
     if (sigUrl) {
-        // กรณีมีรูป: โชว์รูป และ "ซ่อน" ปุ่มอัปโหลดเดิม
+        // --- กรณีมีรูปในระบบ ---
         container.innerHTML = `<img src="${sigUrl}" style="max-height: 80px; display: block; margin-bottom: 5px;">`;
         label.removeAttribute('for'); 
         if (sigButton) sigButton.style.display = 'none'; 
-        if (delButton) delButton.style.display = 'flex'; 
+        if (delButton) delButton.style.display = 'flex'; // โชว์ปุ่มลบ
     } else {
-        // กรณีไม่มีรูป: โชว์ Input และ "แสดง" ปุ่มอัปโหลดเดิม
-        container.innerHTML = '<input type="file" id="signature" name="signature" style="width: 100%;" accept="image/*" />';
+        // --- กรณีไม่มีรูป หรือ โหมดสร้างใหม่ ---
+        container.innerHTML = '<input type="file" id="signature" name="signature" style="width: 100%; height: auto;" accept="image/*" />';
         label.setAttribute('for', 'signature');
         
-        // เช็คว่าไม่ได้อยู่ในโหมดสร้างผู้ใช้ใหม่ ถึงจะโชว์ปุ่มอัปโหลด
-        const isNewUserMode = document.getElementById('user_id_select')?.style.display === 'none';
-        if (sigButton) {sigButton.style.display = isNewUserMode ? 'none' : 'flex';}
-        if (delButton) {delButton.style.display = isNewUserMode ? 'none' : 'flex';}
+        // 2. จัดการปุ่ม (ซ่อนทั้งคู่ถ้าเป็นโหมดสร้างใหม่, ถ้าโหมดแก้ไขให้โชว์ปุ่มอัปโหลด)
+        if (sigButton) {
+            sigButton.style.display = isNewUserActive ? 'none' : 'flex';
+        }
+        if (delButton) { 
+            delButton.style.display = 'none'; // *** ต้องซ่อนเสมอเพราะไม่มีรูปให้ลบ ***
+        }
     }
 }
 
@@ -391,5 +397,4 @@ document.getElementById('section')?.addEventListener('change', function() {
 
 /*
 https://share.google/aimode/F3FJWqV4XXb3glHou
-limit select option length?
 */

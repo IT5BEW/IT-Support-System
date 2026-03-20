@@ -53,7 +53,7 @@ html, body{
     border: 1px solid rgba(11, 107, 211, 0.35);
     margin-top: 10px;
 }
-.formItemRow{display: flex; align-items: center;}
+.formItemRow{display: flex; align-items: center; position: relative; height: 36px;}
 .formLabel{font-size: 18px; margin: 0; width: 20%;}
 .formInput{width: 50%; font-size: 18px;}
 .formPassInput{width: 87%;}
@@ -77,6 +77,30 @@ html, body{
     align-self: center;
 }
 .buttonLabel{font-size: 18px; margin: 0;}
+
+#user_id_select {
+    width: 50%;
+    height: 36px; /* กำหนดความสูงปกติไว้ด้วย */
+    transition: none;
+    position: relative; /* ให้ตัวมันเองเป็นจุดอ้างอิงเบื้องต้น */
+    z-index: 1;
+}
+
+#user_id_select:focus {
+    height: auto !important;
+    position: absolute; 
+    z-index: 100;
+    width: 50% !important;
+    
+    /* --- ส่วนที่เพิ่มเพื่อให้ลงมาด้านล่าง --- */
+    top: 0px;    /* ขยับลงมาเท่ากับความสูงของตัวมันเอง (จะไม่ทับช่องเดิม) */
+    left: 20%;   /* ระยะห่างจากขอบซ้าย (ให้ตรงกับช่อง input เดิม) */
+    margin-left: 0; /* เปลี่ยนจาก margin เป็น left จะคุมตำแหน่งแม่นกว่า */
+    
+    background: var(--inputBg);
+    border-color: var(--focusBorder);
+    box-shadow: var(--focusHover);
+}
 
 #nameButton{border: 1px solid var(--blue); background-color: var(--blue); cursor: pointer;}
 #nameButton i, #nameButton p {color: white;}
@@ -105,6 +129,7 @@ input, select, textarea{
     box-sizing: border-box;
     display: inline-block;
     vertical-align: middle;
+    height: 36px;
 }
 input:focus, select:focus, textarea:focus {
     outline: none !important;
@@ -129,8 +154,8 @@ input[type="file"]::file-selector-button{
     color: white;
     border: 1px solid var(--upload); 
     background-color: var(--upload); 
-    
 }
+
 input[type="file"]::file-selector-button:hover{border: 1px solid var(--darkupload); background-color: var(--darkupload);}
 
 input[type="radio"] {
@@ -188,11 +213,20 @@ input[type="radio"]:checked::before {
 }
 
 @media screen and (max-width: 650px){
-    .formItemRow{display: flex; flex-direction: column;}
+    .formItemRow{display: flex; flex-direction: column; height: auto;}
     .formInput{width: 100%;}
     .formLabel{width: 100%;}
     .radioInput{width: 100%;}
     #radioFormRow{flex-direction: column;}
     #radioFormLabel{width: 100%;}
     #radioFormInput{width: 100%; flex-direction: column;}
+    #user_id_select {width: 100%; margin-left: 0;}
+    #user_id_select:focus {
+        width: 100% !important;
+        margin-left: 0;
+        /* ในมือถือ ให้กางทับลงมาข้างล่าง Label */
+        position: relative; 
+        z-index: 100;
+        left: 0%;
+    }
 }
