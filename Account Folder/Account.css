@@ -17,6 +17,8 @@
     --darkgray: #2c3e50;
     --red: #ef4444;
     --darkred: #dc2626;
+    --gray: #34495e;
+    --drakgrey: #2c3e50;
 }
 
 *{
@@ -117,6 +119,9 @@ html, body{
 #newUserButton{border: 1px solid var(--blue); background-color: var(--blue); cursor: pointer;}
 #newUserButton i, #newUserButton p {color: white;}
 #newUserButton:hover{border: 1px solid var(--darkblue); background-color: var(--darkblue);}
+#editUserIDButton{border: 1px solid var(--gray); background-color: var(--gray); cursor: pointer;}
+#editUserIDButton i, #editUserIDButton p {color: white;}
+#editUserIDButton:hover{border: 1px solid var(--darkgray); background-color: var(--darkgray);}
 
 
 input, select, textarea{

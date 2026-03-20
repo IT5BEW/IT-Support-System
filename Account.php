@@ -54,6 +54,8 @@ $error_noimage = false;
 $error_bigimage = false;
 $error_nameempty = false;
 $error_useridempty = false;
+$error_edit_userid_empty = false;
+$error_match_userid = false;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") { 
     if (isset($_POST['update_profile'])) {
@@ -92,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $status = 0; 
         supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $dataInput, $status);
 
-        if ($status === 200 || $status === 204 || $status === 201) {$_SESSION['flash_message'] = "แก้ไขข้อมูลผู้ใช้สำเร็จ";} 
+        if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "แก้ไขข้อมูลผู้ใช้สำเร็จ";} 
         else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
 
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -122,7 +124,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $status = 0; 
             supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $data, $status);
 
-            if ($status === 200 || $status === 204 || $status === 201) {$_SESSION['flash_message'] = "แก้ไขรหัสผ่านสำเร็จ";} 
+            if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "แก้ไขรหัสผ่านสำเร็จ";} 
             else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
             
             header("Location: " . $_SERVER['PHP_SELF']);
@@ -156,7 +158,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $status = 0; 
                 supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $data, $status);
                 
-                if ($status === 200 || $status === 204 || $status === 201) {$_SESSION['flash_message'] = "แก้ไขลายเซ็นสำเร็จ";} 
+                if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "แก้ไขลายเซ็นสำเร็จ";} 
                 else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
             }
             else{
@@ -188,7 +190,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $status = 0;
                 supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($user_id), "PATCH", $data, $status);
 
-                if ($status === 200 || $status === 204 || $status === 201) {$_SESSION['flash_message'] = "ลบลายเซ็นสำเร็จ";} 
+                if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "ลบลายเซ็นสำเร็จ";} 
                 else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัปเดตฐานข้อมูล (Status: $status)";}
             }
             else{
@@ -274,7 +276,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $status = 0;
             supabase_query("/rest/v1/Users", "POST", $data, $status);
 
-            if ($status === 201 || $status === 200 || $status === 204) {
+            if ($status >= 200 && $status < 300) {
                 $_SESSION['flash_message'] = "สร้างผู้ใช้งานสำเร็จ";
                 header("Location: " . $_SERVER['PHP_SELF']);
                 exit;
@@ -282,6 +284,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             else {
                 $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";
             }
+        }
+    }
+
+    if (isset($_POST['change_userid'])) {
+        // 1. ดึง ID เดิม (จาก hidden) และ ID ใหม่ (จาก input)
+        $current_id = $_POST['user_id'] ?? ''; 
+        $new_id = trim($_POST['edit_user_id'] ?? '');
+
+        // 2. หาข้อมูลของคนที่จะถูกอัปเดตจาก $datas (สมมติ PK ของคุณชื่อ 'id')
+        $key = array_search($current_id, array_column($datas ?? [], 'User_ID'));
+        $target_user = ($key !== false) ? $datas[$key] : null;
+
+        // 3. ตรวจสอบรหัสซ้ำ (เช็คว่ารหัสใหม่ไปตรงกับ User_ID ของคนอื่นในระบบหรือไม่)
+        $is_duplicate = false;
+        foreach ($datas as $d) {
+            // เงื่อนไข: ถ้าเจอ User_ID ในระบบที่ตรงกับรหัสใหม่ (new_id) 
+            // และคนนั้น "ไม่ใช่" คนที่เรากำลังแก้ไขอยู่ (current_id)
+            if ($d['User_ID'] === $new_id && $d['User_ID'] !== $current_id) {
+                $is_duplicate = true;
+                break;
+            }
+        }
+
+        if (empty($new_id)) {$error_edit_userid_empty = true;} 
+        elseif ($is_duplicate) {$error_match_userid = true;} 
+        elseif ($new_id === $current_id) {header("Location: " . $_SERVER['PHP_SELF']); exit;} 
+        else {
+            $data = ["User_ID" => $new_id];
+            $status = 0;
+            
+            supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($current_id), "PATCH", $data, $status);
+
+            if ($status >= 200 && $status < 300) {
+                $_SESSION['flash_message'] = "แก้ไขรหัสผู้ใช้สำเร็จ";
+                if ($current_id === $_SESSION['user_id']) {$_SESSION['user_id'] = $new_id;}
+            } 
+            else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาด (Status: $status)";}
+            
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
         }
     }
 }
@@ -369,9 +411,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <input class="formInput" type="text" name="user_id" id="user_id" placeholder="รหัสผู้ใช้" style="display:none;">
                             </div>
                         </div>
-                        <p class="checkedText" id="checkUserID" <?= $error_nameempty ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> รหัสผู้ใช้ต้องไม่เป็นค่าว่าง</p>
+                        <p class="checkedText" id="checkUserID" <?= $error_useridempty ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> รหัสผู้ใช้ต้องไม่เป็นค่าว่าง</p>
                     
                         <hr style="margin:25px 0; border: 1px solid #e2e8f0"> 
+                    <?php endif; ?>
+
+                    <?php if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'): ?>
+                        <div id="editUserIdItem">
+                            <form action="" method="POST" id="editUserIDForm" onsubmit="getUserData(this, '<?php echo $user['User_ID'] ?>')">
+                                <input type="hidden" name="user_id">
+                                <div class="headerText">แก้ไขรหัสผู้ใช้</div>
+                                <div class="formItemContainer">
+                                    <div class="formItemRow">
+                                        <label class="formLabel" for="edit_user_id">แก้ไขรหัสผู้ใช้</label>
+                                        <input class="formInput" type="text" name="edit_user_id" id="edit_user_id" placeholder="รหัสผู้ใช้" value="<?= htmlspecialchars($user['User_ID']) ?>">
+                                    </div>
+                                </div>
+                                <p class="checkedText" id="checkBlankUserID" <?= $error_edit_userid_empty ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> รหัสผู้ใช้ห้ามเป็นค่าว่าง</p>
+                                <p class="checkedText" id="checkMatchUserID" <?= $error_match_userid ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> มีรหัสผู้ใช้นี้ในระบบแล้ว กรุณาใช้รหัสอื่น</p>
+                                <button type="submit" value="Submit" class="button" id="editUserIDButton" name="change_userid">
+                                    <i class="fa-solid fa-user-tag"></i>
+                                    <p class="buttonLabel">แก้ไขรหัสผู้ใช้</p>
+                                </button>
+                            </form>
+                            <hr style="margin:25px 0; border: 1px solid #e2e8f0"> 
+                        </div>
                     <?php endif; ?>
 
                     <div class="headerText">แก้ไขข้อมูลผู้ใช้</div>

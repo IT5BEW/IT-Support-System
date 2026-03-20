@@ -57,12 +57,11 @@ function NewUser(newUser) {
     const userInput = document.getElementById('user_id');
     const nameBtn = document.getElementById('nameButton');
     const passBtn = document.getElementById('passButton');
-    const sigBtn = document.getElementById('signatureButton');
-    const delBtn = document.getElementById('deleteSignatureButton');
     const oldPass = document.getElementById('oldPassRow');
     const nameForm = document.getElementById('nameForm');
     const newUserBtn = document.getElementById('newUserButton');
     const sectionInput = document.getElementById('section');
+    const editIdItem = document.getElementById('editUserIdItem');
 
     if (newUser) {
         // ใช้ if เช็คว่ามี element นั้นจริงไหมก่อนสั่ง style
@@ -73,6 +72,7 @@ function NewUser(newUser) {
         if (passBtn) passBtn.style.display = 'none';
         if (oldPass) oldPass.style.display = 'none';
         if (newUserBtn) newUserBtn.style.display = 'flex';
+        if (editIdItem) editIdItem.style.display = 'none';
 
         // 1. ล้างค่าแผนกเพื่อให้รายการคอมพิวเตอร์ว่างเปล่าในหน้าสร้างใหม่
         if (sectionInput) sectionInput.value = "";
@@ -92,6 +92,7 @@ function NewUser(newUser) {
         if (passBtn) passBtn.style.display = 'flex';
         if (oldPass) oldPass.style.display = 'flex';
         if (newUserBtn) newUserBtn.style.display = 'none';
+        if (editIdItem) editIdItem.style.display = 'block';
         
         // หมายเหตุ: sigBtn จะถูกสั่งโชว์/ซ่อนอัตโนมัติข้างใน renderSignatureUI
         if (nameForm) nameForm.reset();
@@ -104,22 +105,34 @@ function NewUser(newUser) {
         // เรียกใช้เพื่อให้เช็คว่า User คนนี้มีลายเซ็นเก่าหรือไม่
         renderSignatureUI(currentId);
 
-        document.getElementById('checkUserID').hidden = true;
-        document.getElementById('checkName').hidden = true;
-        document.getElementById("check1").hidden = true;
+        document.getElementById('checkUserID')?.setAttribute('hidden', true);
+        document.getElementById('checkName')?.setAttribute('hidden', true);
+        document.getElementById('check1')?.setAttribute('hidden', true);
+        document.getElementById('checkBlankUserID')?.setAttribute('hidden', true);
+        document.getElementById('checkMatchUserID')?.setAttribute('hidden', true);
     }
 }
 
 function resetNameForm(){
-    document.getElementById("user_id").value = '';
-    document.getElementById("firstname").value = '';
-    document.getElementById("lastname").value = '';
-    document.getElementById("section").value = '';
-    document.getElementById("role").value = '';
-    document.getElementById("equipment_id").value = '';
-    document.getElementById("comusername").value = '';
-    document.getElementById("equipment_id").value = '';
-    updateComputerList("", "", true); 
+    // ใช้ querySelector หรือ getElementById พร้อม ?. เพื่อป้องกัน Error
+    if (document.getElementById("user_id")) document.getElementById("user_id").value = '';
+    if (document.getElementById("firstname")) document.getElementById("firstname").value = '';
+    if (document.getElementById("lastname")) document.getElementById("lastname").value = '';
+    if (document.getElementById("section")) document.getElementById("section").value = '';
+    if (document.getElementById("role")) document.getElementById("role").value = '';
+    if (document.getElementById("comusername")) document.getElementById("comusername").value = '';
+    
+    // เคลียร์คอมพิวเตอร์
+    const equipSelect = document.getElementById("equipment_id");
+    if (equipSelect) {
+        equipSelect.value = '';
+        // อัปเดตรายการคอมให้ว่างเปล่า (โหมด New User)
+        updateComputerList("", "", true); 
+    }
+
+    // เคลียร์ช่องแก้ไขรหัสผู้ใช้ (ถ้ามี)
+    const editUserId = document.getElementById('edit_user_id');
+    if (editUserId) editUserId.value = '';
 }
 
 function getUserData(formElement, user_id_from_php) {
@@ -344,6 +357,9 @@ function renderUserInfo(userId) {
     const userData = userMap[userId];
 
     if (userData) {
+        // --- ส่วนที่เพิ่มใหม่: หยอด ID ลงในช่อง "แก้ไขรหัสผู้ใช้" ---
+        const editUserIdInput = document.getElementById('edit_user_id');
+        if (editUserIdInput) {editUserIdInput.value = userId;}
         // หยอดค่าลง Input Text
         if (form.querySelector('[name="firstname"]')) form.querySelector('[name="firstname"]').value = userData.Firstname;
         if (form.querySelector('[name="lastname"]')) form.querySelector('[name="lastname"]').value = userData.Lastname;
@@ -395,6 +411,33 @@ document.getElementById('section')?.addEventListener('change', function() {
     updateComputerList(this.value, "", isNewUserMode);
 });
 
-/*
-https://share.google/aimode/F3FJWqV4XXb3glHou
-*/
+document.getElementById('editUserIDForm')?.addEventListener("submit", function(event) {
+    const p1 = document.getElementById("checkBlankUserID");
+    const p2 = document.getElementById("checkMatchUserID");
+    p1.hidden = p2.hidden = true;
+
+    const editUserID = document.getElementById("edit_user_id").value.trim();
+    const currentUserID = document.getElementById("user_id_select")?.value;
+
+    if (!editUserID) {
+        p1.hidden = false;
+        event.preventDefault();
+        return;
+    }
+
+    // เช็ครหัสซ้ำ (ดึงข้อมูลทั้งหมดจาก data-users มาเช็ค)
+    const nameForm = document.getElementById('nameForm');
+    const userMap = JSON.parse(nameForm?.getAttribute('data-users') || '{}');
+
+    // เงื่อนไข: รหัสใหม่ต้องไม่ซ้ำกับใครในระบบ (ยกเว้นรหัสเดิมของตัวเอง)
+    if (editUserID !== currentUserID && userMap[editUserID]) {
+        if (p2) p2.hidden = false;
+        event.preventDefault();
+        return;
+    }
+
+    // ยืนยันการบันทึก
+    if (!confirm('ยืนยันการเปลี่ยนรหัสผู้ใช้งานหรือไม่?')) {
+        event.preventDefault();
+    }
+});
