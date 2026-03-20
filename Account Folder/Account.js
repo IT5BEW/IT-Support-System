@@ -62,6 +62,7 @@ function NewUser(newUser) {
     const oldPass = document.getElementById('oldPassRow');
     const nameForm = document.getElementById('nameForm');
     const newUserBtn = document.getElementById('newUserButton');
+    const sectionInput = document.getElementById('section');
 
     if (newUser) {
         // ใช้ if เช็คว่ามี element นั้นจริงไหมก่อนสั่ง style
@@ -74,6 +75,11 @@ function NewUser(newUser) {
         if (delBtn) delBtn.style.display = 'none';
         if (oldPass) oldPass.style.display = 'none';
         if (newUserBtn) newUserBtn.style.display = 'flex';
+
+        // 1. ล้างค่าแผนกเพื่อให้รายการคอมพิวเตอร์ว่างเปล่าในหน้าสร้างใหม่
+        if (sectionInput) sectionInput.value = "";
+        // 2. เรียกกรองคอมพิวเตอร์: (แผนกว่าง, ไม่มีคอมเดิม, เป็นหน้าสร้างใหม่ = true)
+        updateComputerList("", "", true);
 
         if (typeof resetNameForm === "function") resetNameForm();
         
@@ -94,7 +100,13 @@ function NewUser(newUser) {
 
         // โหมดแก้ไข: เช็คค่าจาก select หรือ id ปัจจุบัน
         const currentId = userSelect ? userSelect.value : (userInput ? userInput.value : null);
+        if (currentId && typeof renderUserInfo === "function") {renderUserInfo(currentId); } 
+        else {updateComputerList("", "", false);}
         renderSignatureUI(currentId);
+
+        document.getElementById('checkUserID').hidden = true;
+        document.getElementById('checkName').hidden = true;
+        document.getElementById("check1").hidden = true;
     }
 }
 
@@ -106,6 +118,8 @@ function resetNameForm(){
     document.getElementById("role").value = '';
     document.getElementById("equipment_id").value = '';
     document.getElementById("comusername").value = '';
+    document.getElementById("equipment_id").value = '';
+    updateComputerList("", "", true); 
 }
 
 function getUserData(formElement, user_id_from_php) {
@@ -337,11 +351,45 @@ function renderUserInfo(userId) {
         if (sectionSelect) sectionSelect.value = userData.Section || '';
         if (roleSelect) roleSelect.value = userData.Role || '';
         if (equipSelect) equipSelect.value = userData.Equipment_ID || '';
+
+        // เรียกกรองคอมพิวเตอร์ (โหมดแก้ไข: false)
+        updateComputerList(userData.Section, userData.Equipment_ID, false);
     }
 }
 
+
+function updateComputerList(targetSection = "", currentEquipId = "", isNewUser = false) {
+    const equipSelect = document.getElementById('equipment_id');
+    const allComps = JSON.parse(equipSelect.getAttribute('data-all-comps') || '[]');
+    
+    // ล้างค่าเก่า
+    equipSelect.innerHTML = '<option value="">ไม่มี</option>';
+
+    // ถ้าหน้า "สร้างใหม่" แต่ยังไม่เลือกแผนก -> ไม่ต้องโชว์คอม
+    if (isNewUser && !targetSection) return;
+
+    allComps.forEach(comp => {
+        const compId = String(comp.Equipment_ID);
+        const selectedId = String(currentEquipId);
+
+        // เงื่อนไขแสดงผล: แผนกตรงกัน OR (โหมดแก้ไขและเป็นเครื่องที่ใช้อยู่)
+        if (comp.Section === targetSection || (!isNewUser && compId === selectedId)) {
+            const opt = document.createElement('option');
+            opt.value = comp.Equipment_ID;
+            opt.text = comp.Equipment_ID;
+            if (compId === selectedId && selectedId !== "") opt.selected = true;
+            equipSelect.add(opt);
+        }
+    });
+}
+
+document.getElementById('section')?.addEventListener('change', function() {
+    // เช็คว่าตอนนี้เปิดโหมด "สร้างผู้ใช้ใหม่" อยู่หรือไม่
+    const isNewUserMode = document.getElementById('user_id').style.display !== 'none';
+    updateComputerList(this.value, "", isNewUserMode);
+});
+
 /*
-เปลี่ยนให้เลือกคอมได้เฉพาะแผนกที่อยู่เท่านั้น
 https://share.google/aimode/F3FJWqV4XXb3glHou
 limit select option length?
 */

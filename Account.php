@@ -40,6 +40,7 @@ if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'){
 }
 $sigJson = htmlspecialchars(json_encode($userSigMap), ENT_QUOTES, 'UTF-8');
 $userJson = htmlspecialchars(json_encode($userMap), ENT_QUOTES, 'UTF-8');
+$compJson = htmlspecialchars(json_encode($computers), ENT_QUOTES, 'UTF-8');
 
 $all_sections = ['IT', 'AC', 'HR', 'PUR', 'SALES', 'PC', 'PJ&System', 'ENG-PE', 'QA-QC', 'MT', 'Production'];
 $all_roles = ['User', 'HoD', 'IT', 'IT_Director'];
@@ -410,7 +411,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                                 <div class="formItemRow">
                                     <label class="formLabel" for="equipment_id">คอมพิวเตอร์</label>
-                                    <select id="equipment_id" name="equipment_id" class="formInput">
+                                    <select id="equipment_id" name="equipment_id" class="formInput" data-all-comps='<?= $compJson ?>'>
                                         <option value="">ไม่มี</option>
                                         <?php foreach ($computers as $computer): ?>
                                             <?php if ($computer['Section'] == $user['Section'] || $computer['Equipment_ID'] == $user['Equipment_ID']): ?>
