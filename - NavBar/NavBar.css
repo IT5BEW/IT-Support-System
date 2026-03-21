@@ -1,8 +1,8 @@
-:root{--border: #dbe7f5;}
+:root{--navborder: #dbe7f5;}
 
 .nav{
     background: rgba(255,255,255,0.9);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--navborder);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -41,7 +41,7 @@
     position: absolute; 
     top: 63px; 
     right: 20px; 
-    border: 1px solid var(--border);
+    border: 1px solid var(--navborder);
     border-radius: 8px;
     padding: 10px;
 }

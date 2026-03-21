@@ -17,8 +17,6 @@
     --darkgray: #2c3e50;
     --red: #ef4444;
     --darkred: #dc2626;
-    --gray: #34495e;
-    --drakgrey: #2c3e50;
 }
 
 *{
@@ -32,7 +30,7 @@ html, body{
     /* background: linear-gradient(180deg,rgba(130, 185, 240, 1) 60%, rgba(70, 125, 210, 1) 100%); */
 }
 
-#accountSection{max-width: 850px; margin: 0 auto;}
+#mainSection{max-width: 850px; margin: 0 auto;}
 
 .mainContainer{padding: 30px 0;}
 .itemContainer{

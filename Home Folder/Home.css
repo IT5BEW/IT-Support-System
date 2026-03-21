@@ -14,8 +14,8 @@
     --approveHover:	#059669;
     --fix: #8B5CF6;
     --fixHover: #7C3AED;
-    --pc: #6366F1;
-    --pcHover: #4F46E5;
+    --pc: #334155;
+    --pcHover: #1E293B;
     --finalize: #047857;
     --finalizeHover: #065F46;
 }
@@ -31,7 +31,7 @@ html, body{
     /* background: linear-gradient(180deg,rgba(130, 185, 240, 1) 60%, rgba(70, 125, 210, 1) 100%); */
 }
 
-#homeSection{max-width: 850px; margin: 0 auto;}
+#mainSection{max-width: 850px; margin: 0 auto;}
 
 .mainContainer{padding: 30px 0;}
 .itemContainer{
@@ -114,6 +114,8 @@ html, body{
 #problem:hover{background-color: var(--problemHover); border: 1px solid var var(--problemHover);}
 #exit{background-color: var(--exit); border: 1px solid var(--exit);}
 #exit:hover{background-color: var(--exitHover); border: 1px solid var var(--exitHover);}
+#pc{background-color: var(--pc); border: 1px solid var(--pc);}
+#pc:hover{background-color: var(--pcHover); border: 1px solid var var(--pcHover);}
 
 @media screen and (max-width: 875px){
     .mainContainer{padding: 20px;}
@@ -143,4 +145,10 @@ html, body{
     .button i{font-size: medium}
     .describeBoxHeader{width: 45%;}
     .describeBoxInner{width: 50%;}
+}
+
+@media screen and (max-width: 360px){
+    .describeBox{flex-direction: column;}
+    .describeBoxHeader{width: 100%;}
+    .describeBoxInner{width: 85%;}
 }

@@ -24,7 +24,6 @@ $user = (!empty($data)) ? $data[0] : null;
     <link rel="icon" type="image/x-icon" href="../- Image/BEW-Logo.ico">
     
     <link rel="stylesheet" href="Home Folder/Home.css">
-    <link rel="stylesheet" href="- Navbar/NavBar.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,29 +33,9 @@ $user = (!empty($data)) ? $data[0] : null;
 </head>
 <body>
     <main>
-        <nav class="nav">
-            <div class="nav-inner">
-                <div class="brand">
-                    <img src="../- Image/BEW Logo.png" alt="logo" id="imgLogo">
-                    ระบบแจ้งปัญหา IT
-                </div>
-                <div class="hamburger" id="hamburger">
-                    <p id="menuText" style="margin:0px;">เมนูทั้งหมด</p>
-                    <i class="fa-solid fa-bars" style="font-size: 18px;"></i>
-                </div>
-                <div class="nav-links" id="navLinks">
-                    <a href="Home" class="nav-link active">หน้าหลัก</a>
-                    <a href="IT Request Form" class="nav-link">ใบขอแจ้งซ่อม</a>
-                    <a href="" class="nav-link">ประวัติการแจ้งซ่อม</a>
-                    <a href="Account" class="nav-link">แก้ไขข้อมูลผู้ใช้</a>
-                    <form action="Logout.php" method="POST" style="margin: 0;">
-                        <button class="nav-link" id="logoutMenu" type="submit" name="logout">ออกจากระบบ</button>
-                    </form>     
-                </div>
-            </div>
-        </nav>
+        <?php include_once 'Navbar.php'; ?>
 
-        <section id="homeSection">
+        <section id="mainSection">
             <div class="mainContainer">
                 <div class="itemContainer">
                     <p id="welcomeText">
@@ -83,6 +62,9 @@ $user = (!empty($data)) ? $data[0] : null;
                         <a href="IT Request Form" style="text-decoration: none;"><button class="button" id="report"><i class="fa-regular fa-file-lines"></i>ใบแจ้งซ่อม</button></a>        
                         <a href="" style="text-decoration: none;"><button class="button" id="history"><i class="fa-solid fa-clock"></i>ประวัติการแจ้งซ่อม</button></a>
                         <a href="Account" style="text-decoration: none;"><button class="button" id="account"><i class="fa-solid fa-user"></i>แก้ไขข้อมูล<br>ผู้ใช้</button></a>
+                        <?php if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'): ?>
+                            <a href="Computer" style="text-decoration: none;"><button class="button" id="pc"><i class="fa-solid fa-user"></i>แก้ไขข้อมูล<br>คอมพิวเตอร์</button></a>
+                        <?php endif; ?>
                         <a href="" style="text-decoration: none;"><button class="button" id="problem"><i class="fa-solid fa-triangle-exclamation"></i>แจ้งปัญหาเว็บไซต์</button></a>
                         <form action="Logout.php" method="POST" style="margin: 0;">
                             <button class="button" id="exit" type="submit" name="logout"><i class="fa-solid fa-arrow-right-from-bracket"></i>ออกจากระบบ</button>
@@ -92,10 +74,5 @@ $user = (!empty($data)) ? $data[0] : null;
             </div>
         </section>
     </main>
-    <section>
-
-    </section>
-    
-    <script src="- Navbar/NavBar.js"></script>
 </body>
 </html>
