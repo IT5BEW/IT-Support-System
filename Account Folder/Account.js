@@ -155,7 +155,6 @@ function getUserData(formElement, user_id_from_php) {
 
     // 5. ใส่ค่าสุดท้ายที่เลือกได้
     hiddenInput.value = finalValue;
-    console.log("Sending User ID:", finalValue);
 }
 
 document.getElementById("signatureForm")?.addEventListener("submit", function(event) {

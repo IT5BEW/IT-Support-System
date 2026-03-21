@@ -12,6 +12,27 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 $logged_user  = $_SESSION['user_id'];
 $data = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($logged_user) . "&select=*");
 $user = (!empty($data)) ? $data[0] : null;
+$computers = supabase_query("/rest/v1/Computer?select=*") ?? [];
+$computerMap = [];
+foreach ($computers as $com) {
+    // ใช้ Equipment_ID เป็น Key แทนเลข 0, 1
+    $computerMap[$com['Equipment_ID']] = [
+        'Equipment_ID' => $com['Equipment_ID'] ?? '',
+        'ComName' => $com['ComName'] ?? '',
+        'IP' => $com['IP'] ?? '',
+        'Section' => $com['Section'] ?? ''
+    ];
+}
+$compJson = htmlspecialchars(json_encode($computerMap), ENT_QUOTES, 'UTF-8');
+
+// ค้นหาคอมพิวเตอร์ในรายการที่มี Equipment_ID ตรงกับของ User
+$mycomputer = array_filter($computers, fn($c) => $c['Equipment_ID'] === $user['Equipment_ID']);
+$mycomputer = reset($mycomputer) ?: null; // ดึงข้อมูลเครื่องนั้นออกมา (ตัวแรกที่เจอ)
+
+$all_sections = ['IT', 'AC', 'HR', 'PUR', 'SALES', 'PC', 'PJ&System', 'ENG-PE', 'QA-QC', 'MT', 'Production'];
+
+$error_nocomputerselect = false;
+$error_computerempty = false;
 
 ?>
 
@@ -37,10 +58,83 @@ $user = (!empty($data)) ? $data[0] : null;
         <section id="mainSection">
             <div class="mainContainer">
                 <div class="itemContainer">
+                    <div class="headerText">ตัวเลือกการแก้ไข</div>
+                    <div class="formItemContainer">
+                        <form action="" id="" class="formContainer">
+                            <div class="formItemRow" id="radioFormRow">
+                                <div class="formLabel" id="radioFormLabel">ตัวเลือกการแก้ไข</div>
+                                <div class="formInput" id="radioFormInput">
+                                    <div class="radioInput">
+                                        <input type="radio" id="editAccount" name="account" value="EditAccount" onclick="NewComputer(false)" checked><label for="editAccount">แก้ไขข้อมูลคอมพิวเตอร์</label>
+                                    </div>
+                                    <div class="radioInput">
+                                        <input type="radio" id="newAccount" name="account" value="NewAccount" onclick="NewComputer(true)"><label for="newAccount">สร้างข้อมูลคอมพิวเตอร์ใหม่</label>
+                                    </div>   
+                                </div>    
+                            </div>
+                        </form>
+                    </div>
+
+                    <hr style="margin:25px 0; border: 1px solid #e2e8f0">
+                    <div id="computerSelect">
+                        <div class="headerText">คอมพิวเตอร์</div>
+                        <div class="formItemContainer">
+                            <div class="formItemRow">
+                                <label class="formLabel" for="computer_select">คอมพิวเตอร์</label>
+                                <select id="computer_select" name="computer_select" class="formInput" onfocus="this.size=10;" onblur="this.size=1;" onchange="this.size=1; this.blur();">
+                                    <?php natsort($computers); $myComputer = $user['Equipment_ID']; ?>
+                                    <option value="<?= $myComputer ?>" selected><?= $myComputer ?></option>
+                                    <?php foreach ($computers as $eachdata): ?>
+                                        <?php if ($eachdata['Equipment_ID'] == $myComputer) continue; ?>
+                                        <option value="<?= $eachdata['Equipment_ID'] ?>"><?= $eachdata['Equipment_ID'] ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <input class="formInput" type="text" name="user_id" id="user_id" placeholder="คอมพิวเตอร์" style="display:none;">
+                            </div>
+                        </div>
+                        <p class="checkedText" id="checkUserID" <?= $error_nocomputerselect ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> รหัสผู้ใช้ต้องไม่เป็นค่าว่าง</p>
                     
+                        <hr style="margin:25px 0; border: 1px solid #e2e8f0">
+                    </div>
+
+                    <div class="headerText">รายละเอียดคอมพิวเตอร์</div>
+                    <form action="" id="computerForm" method="POST" class="formContainer" data-computers='<?= $compJson ?>' onsubmit="getComputerData(this, '<?php echo $user['Equipment_ID'] ?>'); return confirm('ยืนยันการเปลี่ยนแปลงข้อมูลคอมพิวเตอร์หรือไม่?');">
+                        <input type="hidden" name="computer">
+                        <div class="formItemContainer">
+                            <div class="formItemRow">
+                                <label class="formLabel" for="equipment_id">คอมพิวเตอร์</label>
+                                <input class="formInput" type="text" name="equipment_id" id="equipment_id" placeholder="คอมพิวเตอร์" value="<?php echo htmlspecialchars($mycomputer['Equipment_ID'] ?? ''); ?>">
+                            </div>
+                            <div class="formItemRow">
+                                <label class="formLabel" for="comname">ชื่อคอมพิวเตอร์</label>
+                                <input class="formInput" type="text" name="comname" id="comname" placeholder="ชื่อคอมพิวเตอร์" value="<?php echo htmlspecialchars($mycomputer['ComName'] ?? ''); ?>">
+                            </div>
+                            <div class="formItemRow">
+                                <label class="formLabel" for="ip">IP Address</label>
+                                <input class="formInput" type="text" name="ip" id="ip" placeholder="IP Address" value="<?php echo htmlspecialchars($mycomputer['IP'] ?? ''); ?>">
+                            </div>
+                            <div class="formItemRow">
+                                    <label class="formLabel" for="section">แผนก</label>
+                                    <select id="section" name="section" class="formInput">
+                                        <option value="" hidden>ไม่มี</option>
+                                        <?php foreach ($all_sections as $section): ?>
+                                            <option value="<?= $section ?>" <?= ($section == $mycomputer['Section']) ? 'selected' : '' ?>>
+                                                <?= $section ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                        </div>
+                        <p class="checkedText" id="checkCom" <?= $error_computerempty ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> ชื่อ นามสกุล แผนก และบทบาท ต้องไม่เป็นค่าว่าง</p>
+                        <button type="submit" value="Submit" class="button" id="computerButton" name="update_computer">
+                            <i class="fa-solid fa-computer"></i>
+                            <p class="buttonLabel">แก้ไขข้อมูลคอมพิวเตอร์</p>
+                        </button>
+                    </form>
                 </div>
             </div>
         </section>
     </main>
+    <script src="Computer Folder/Computer.js"></script>
 </body>
 </html>

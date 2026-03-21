@@ -40,7 +40,7 @@ if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'){
 }
 $sigJson = htmlspecialchars(json_encode($userSigMap), ENT_QUOTES, 'UTF-8');
 $userJson = htmlspecialchars(json_encode($userMap), ENT_QUOTES, 'UTF-8');
-$compJson = htmlspecialchars(json_encode($computers), ENT_QUOTES, 'UTF-8');
+$comJson = htmlspecialchars(json_encode($computers), ENT_QUOTES, 'UTF-8');
 
 $all_sections = ['IT', 'AC', 'HR', 'PUR', 'SALES', 'PC', 'PJ&System', 'ENG-PE', 'QA-QC', 'MT', 'Production'];
 $all_roles = ['User', 'HoD', 'IT', 'IT_Director'];
@@ -378,9 +378,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="headerText">รหัสผู้ใช้</div>
                         <div class="formItemContainer">
                             <div class="formItemRow">
-                                <label class="formLabel" for="user_id">รหัสผู้ใช้</label>
+                                <label class="formLabel" for="user_id_select">รหัสผู้ใช้</label>
                                 <select id="user_id_select" name="user_id_select" class="formInput" onfocus="this.size=10;" onblur="this.size=1;" onchange="this.size=1; this.blur();">
-                                    <?php sort($users); $myId = $user['User_ID']; ?>
+                                    <?php natsort($users); $myId = $user['User_ID']; ?>
                                     <option value="<?= $myId ?>" selected><?= $myId ?></option>
                                     <?php foreach ($users as $eachdata): ?>
                                         <?php if ($eachdata == $myId) continue; ?>
@@ -454,7 +454,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                                 <div class="formItemRow">
                                     <label class="formLabel" for="equipment_id">คอมพิวเตอร์</label>
-                                    <select id="equipment_id" name="equipment_id" class="formInput" data-all-comps='<?= $compJson ?>'>
+                                    <select id="equipment_id" name="equipment_id" class="formInput" data-all-comps='<?= $comJson ?>'>
                                         <option value="">ไม่มี</option>
                                         <?php foreach ($computers as $computer): ?>
                                             <?php if ($computer['Section'] == $user['Section'] || $computer['Equipment_ID'] == $user['Equipment_ID']): ?>
