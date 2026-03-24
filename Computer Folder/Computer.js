@@ -36,15 +36,18 @@ function NewComputer(newUser) {
     const computerSelect = document.getElementById('computerSelect');
     const computerForm = document.getElementById('computerForm');
     const computerButton = document.getElementById('computerButton');
+    const computerCreateButton = document.getElementById('computerCreateButton');
 
     if (newUser) {
         if (computerSelect) computerSelect.style.display = 'none';
         if (computerButton) computerButton.style.display = 'none';
-        if (typeof resetNameForm === "function") resetComputerForm();
+        if (computerCreateButton) computerCreateButton.style.display = 'flex';
+        if (typeof resetComputerForm() === "function") resetComputerForm();
     } 
     else {
         if (computerSelect) computerSelect.style.display = 'block';
         if (computerButton) computerButton.style.display = 'flex';
+        if (computerCreateButton) computerCreateButton.style.display = 'none';
         if (computerForm) computerForm.reset();
     }
 }
@@ -55,6 +58,32 @@ function resetComputerForm(){
     if (document.getElementById("ip")) document.getElementById("ip").value = '';
     if (document.getElementById("section")) document.getElementById("section").value = '';
 }
+
+document.getElementById("computerForm")?.addEventListener("submit", function(event) {
+    const p= document.getElementById("checkCom");
+    p.hidden = true;
+
+    const submitter = event.submitter;
+
+    const equipment_id = document.getElementById("equipment_id").value.trim();
+    const comname = document.getElementById("comname").value.trim();
+    const ip = document.getElementById("ip").value.trim();
+    const section = document.getElementById("section").value.trim();
+
+    if (!equipment_id || !comname || !ip || !section) {
+        p.hidden = false;
+        event.preventDefault();
+        return;
+    }
+
+    let confirmMessage = "";
+    if (submitter.name === "create_computer") {confirmMessage = "ยืนยันการเพิ่มข้อมูลคอมพิวเตอร์ใหม่ใช่หรือไม่?";} 
+    else {confirmMessage = "ยืนยันการแก้ไขข้อมูลคอมพิวเตอร์ใช่หรือไม่?";} 
+
+    if (!confirm(confirmMessage)) {
+        event.preventDefault();
+    }
+});
 
 /*Fix ResetComputer Form*/ 
 /*Create Edit Computer*/ 

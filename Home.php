@@ -63,7 +63,7 @@ $user = (!empty($data)) ? $data[0] : null;
                         <a href="" style="text-decoration: none;"><button class="button" id="history"><i class="fa-solid fa-clock"></i>ประวัติการแจ้งซ่อม</button></a>
                         <a href="Account" style="text-decoration: none;"><button class="button" id="account"><i class="fa-solid fa-user"></i>แก้ไขข้อมูล<br>ผู้ใช้</button></a>
                         <?php if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'): ?>
-                            <a href="Computer" style="text-decoration: none;"><button class="button" id="pc"><i class="fa-solid fa-user"></i>แก้ไขข้อมูล<br>คอมพิวเตอร์</button></a>
+                            <a href="Computer" style="text-decoration: none;"><button class="button" id="pc"><i class="fa-solid fa-computer"></i>แก้ไขข้อมูล<br>คอมพิวเตอร์</button></a>
                         <?php endif; ?>
                         <a href="" style="text-decoration: none;"><button class="button" id="problem"><i class="fa-solid fa-triangle-exclamation"></i>แจ้งปัญหาเว็บไซต์</button></a>
                         <form action="Logout.php" method="POST" style="margin: 0;">

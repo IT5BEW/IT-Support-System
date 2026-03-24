@@ -6,6 +6,8 @@
     --focusHover: 0 0 0 3px rgba(11, 107, 211, 0.15);
     --blue: #3498db;
     --darkblue: #2980b9;
+    --green: #2ecc71;
+    --darkgreen: #27ae60;
 }
 
 *{
@@ -164,7 +166,10 @@ input[type="radio"]:checked::before {
 
 #computerButton{border: 1px solid var(--blue); background-color: var(--blue); cursor: pointer;}
 #computerButton i, #computerButton p {color: white;}
-#computerButton:hover{border: 1px solid var(--darkb--blue); background-color: var(--darkb--blue);}
+#computerButton:hover{border: 1px solid var(--darkblue); background-color: var(--darkblue);}
+#computerCreateButton{border: 1px solid var(--green); background-color: var(--green); cursor: pointer;}
+#computerCreateButton i, #computerCreateButton p {color: white;}
+#computerCreateButton:hover{border: 1px solid var(--darkgreen); background-color: var(--darkgreen);}
 
 @media screen and (max-width: 875px){
     .mainContainer{padding: 20px;}
