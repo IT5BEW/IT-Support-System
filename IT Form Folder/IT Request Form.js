@@ -24,147 +24,18 @@ Broken.addEventListener("click", CheckForm2)
 ETC.addEventListener("click", CheckForm2)
 ETCText.addEventListener("focusout", CheckForm2)
 
-nameText.addEventListener("focusout", CheckForm3)
-
-var pdfFile
-
-const { PDFDocument } = PDFLib
-const { TextAlignment } = PDFLib
-
-async function fillForm() {
-  // Check Form
-  var check1 = CheckForm1();
-  var check2 = CheckForm2();
-  var check3 = CheckForm3();
-  if(check1&&check2&&check3){
-    // Get Thai Font
-    const thaiFontUrl = '../- Font/THSarabunNew.ttf'
-    const thaiFontBytes = await fetch(thaiFontUrl).then(res => res.arrayBuffer())
-
-    // Fetch the PDF with form fields
-    const formUrl = '../- PDF/IT Request Form.pdf'
-    const formPdfBytes = await fetch(formUrl).then(res => res.arrayBuffer())
-
-    // Load a PDF with form fields
-    const pdfDoc = await PDFDocument.load(formPdfBytes)
-
-    pdfDoc.registerFontkit(fontkit)
-    const thaiFont = await pdfDoc.embedFont(thaiFontBytes)
-
-    // Get the form containing all the fields
-    const form = pdfDoc.getForm()
-
-    // Get all fields in the PDF by their names
-    const Form_CheckBox1 = form.getCheckBox('Check Box1')
-    const Form_CheckBox2 = form.getCheckBox('Check Box2')
-    const Form_EquipmentID = form.getTextField('Equipment ID')
-    const Form_ComName = form.getTextField('Com Name')
-    const Form_User = form.getTextField('User')
-    const Form_Section = form.getTextField('Section')
-
-    const Form_CheckBox3 = form.getCheckBox('Check Box3')
-    const Form_CheckBox4 = form.getCheckBox('Check Box4')
-    const Form_CheckBox5 = form.getCheckBox('Check Box5')
-    const Form_fill_2 = form.getTextField('fill_2')
-
-    const Form_Text6 = form.getTextField('Text6')
-    const Form_Text7 = form.getTextField('Text7')
-    const Form_Text8 = form.getTextField('Text8')
-
-    const Form_Text9 = form.getTextField('Text9')
-    const Form_Text10 = form.getTextField('Text10')
-    const Form_Text11 = form.getTextField('Text11')
-    const Form_Text12 = form.getTextField('Text12')
-
-    // Set Font / Size / Alignment
-    Form_EquipmentID.setFontSize(16);Form_EquipmentID.updateAppearances(thaiFont);Form_EquipmentID.setAlignment(TextAlignment.Center);
-    Form_ComName.setFontSize(16);Form_ComName.updateAppearances(thaiFont);Form_ComName.setAlignment(TextAlignment.Center);
-    Form_User.setFontSize(16);Form_User.updateAppearances(thaiFont);Form_User.setAlignment(TextAlignment.Center);
-    Form_Section.setFontSize(16);Form_Section.updateAppearances(thaiFont);Form_Section.setAlignment(TextAlignment.Center);
-    Form_fill_2.setFontSize(16);Form_fill_2.updateAppearances(thaiFont);Form_fill_2.setAlignment(TextAlignment.Center);
-    Form_Text6.setFontSize(16);Form_Text6.updateAppearances(thaiFont)
-    Form_Text7.setFontSize(16);Form_Text7.updateAppearances(thaiFont)
-    Form_Text8.setFontSize(16);Form_Text8.updateAppearances(thaiFont)
-    Form_Text9.setFontSize(16);Form_Text9.updateAppearances(thaiFont);Form_Text9.setAlignment(TextAlignment.Center);
-    Form_Text10.setFontSize(16);Form_Text10.updateAppearances(thaiFont);Form_Text10.setAlignment(TextAlignment.Center);
-    Form_Text11.setFontSize(16);Form_Text11.updateAppearances(thaiFont);Form_Text11.setAlignment(TextAlignment.Center);
-    Form_Text12.setFontSize(16);Form_Text12.updateAppearances(thaiFont);Form_Text12.setAlignment(TextAlignment.Center);
-
-    /*const characterImageField = form.getButton('CHARACTER IMAGE')
-    const factionImageField = form.getButton('Faction Symbol Image')*/
-
-    // Fill in the basic info fields
-    if(FixCom.checked){Form_CheckBox1.check()}
-    if(FixETC.checked){Form_CheckBox2.check()}
-    Form_EquipmentID.setText(EquipmentID.innerText)
-    Form_ComName.setText(ComName.innerText)
-    Form_User.setText(User.innerText)
-    Form_Section.setText(Section.innerText)
-
-    if(ReInstall.checked){Form_CheckBox3.check()}
-    if(Broken.checked){Form_CheckBox4.check()}
-    if(ETC.checked){Form_CheckBox5.check(); Form_fill_2.setText(document.getElementById('ETCText').value);}
-    else{Form_fill_2.setText('')}
-
-    // Fill in Cause Text Fields
-    Form_Text6.setText(Cause1.value)
-    Form_Text7.setText(Cause2.value)
-    Form_Text8.setText(Cause3.value)
-
-    // Fill in Name Field
-    Form_Text9.setText(nameText.value)
-
-    // Fill in Date
-    const date = new Date();
-    const result = date.toLocaleDateString('th-TH', {year: 'numeric',month: 'short',day: 'numeric',})
-    const splitDate = result.split(' ')
-    Form_Text10.setText(splitDate[0])
-    Form_Text11.setText(splitDate[1])
-    Form_Text12.setText(splitDate[2])
-
-    /* Example for Image Input
-    factionImageField.setImage(emblemImage)*/
-
-    // Workaround to bind Thai font
-    const rawUpdateFieldAppearances = form.updateFieldAppearances.bind(form);
-    form.updateFieldAppearances = function () {
-      return rawUpdateFieldAppearances(thaiFont);
-    };
-
-    // Serialize the PDFDocument to bytes (a Uint8Array)
-    const pdfBytes = await pdfDoc.save()
-
-    // Save form to global variable
-    pdfFile = pdfBytes
-    alert("กรอกฟอร์มสำเร็จ")
-  }
-  else{alert("กรุณากรอกฟอร์มที่กำหนดให้ครบทุกช่อง")}
-}
-
 function UnlockFormETC(){
   var formUnlock = !document.getElementById("ETC").checked
   document.getElementById('ETCText').disabled = formUnlock
   if(formUnlock){if(document.getElementById('ETCText').classList.contains("required")){document.getElementById('ETCText').classList.remove("required");}}
 }
 
-function DownloadForm(){
-    if(pdfFile != undefined){
-      // Trigger the browser to download the PDF document
-      const currentDate = new Date();
-      const isoDate = currentDate.toISOString().slice(0, 10);
-      var fileName = prompt("กรุณาตั้งชื่อไฟล์", isoDate);
-      if(fileName != null && fileName != ""){download(pdfFile, fileName + ".pdf", "application/pdf")}
-    }
-    else{
-      alert("กรุณากรอกฟอร์มด้วยครับ")
-    }
-}
-
 function ClearForm(){
   let deleteForm = "คุณต้องการล้างข้อมูลในฟอร์มหรือไม่";
-  if (confirm(deleteForm) == true) {
-    document.getElementById('mainForm').reset()
-  }
+  if (confirm(deleteForm) == true) {document.getElementById('mainForm').reset()}
+  document.getElementById("check1").hidden = true;
+  document.getElementById("check2").hidden = true;
+  document.getElementById("check3").hidden = true;
 }
 
 function CheckForm(element){

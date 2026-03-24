@@ -13,6 +13,11 @@ $logged_user  = $_SESSION['user_id'];
 $data = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($logged_user) . "&select=*");
 $user = (!empty($data)) ? $data[0] : null;
 
+$computers = supabase_query("/rest/v1/Computer?select=*") ?? [];
+usort($computers, function($a, $b) {return strnatcmp($a['Equipment_ID'], $b['Equipment_ID']);});
+$mycomputer = array_filter($computers, fn($c) => $c['Equipment_ID'] === $user['Equipment_ID']);
+$mycomputer = reset($mycomputer) ?: null;
+
 ?>
 
 <!DOCTYPE html>
@@ -44,7 +49,7 @@ $user = (!empty($data)) ? $data[0] : null;
                 <div class="formItemContainer">
                     <h1 style="font-weight: bold; margin-top: 0; text-align: center;">ใบขอแจ้งซ่อม/ติดตั้งระบบสารสนเทศใหม่</h1> 
                     <hr style="margin:25px 0; border: 1px solid #e2e8f0">
-                    <form action="javascript:;" onsubmit="fillForm()" id="mainForm">
+                    <form action="" id="mainForm">
                         <div id="DescriptionBox">
                             <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดของผู้ใช้งาน</b></p>
                             <div class="DescriptionRow">
@@ -54,13 +59,13 @@ $user = (!empty($data)) ? $data[0] : null;
                                 </div>
                                 <div class="DescriptionCollumn">
                                     <div class="DescriptionLabel"><i class="fa-solid fa-circle-user DescriptionIcon"></i>User:</div>
-                                    <div class="DescriptionInput" id="User"><?php echo htmlspecialchars($user['ComUsername'] ?? 'ไม่มีชื่อผู้ใช้'); ?></div>
+                                    <div class="DescriptionInput" id="User"><?php echo htmlspecialchars($user['Firstname'] ?? 'ไม่มีชื่อผู้ใช้'); ?></div>
                                 </div>
                             </div>
                             <div class="DescriptionRow">
                                 <div class="DescriptionCollumn">
                                     <div class="DescriptionLabel"><i class="fa-solid fa-laptop-file DescriptionIcon"></i>Com. Name:</div>
-                                    <div class="DescriptionInput" id="ComName">TEST</div>
+                                    <div class="DescriptionInput" id="ComName"><?php echo htmlspecialchars($mycomputer['ComName'] ?? 'ไม่มีชื่อคอม'); ?></div>
                                 </div>
                                 <div class="DescriptionCollumn">
                                     <div class="DescriptionLabel"><i class="fa-solid fa-building-user DescriptionIcon"></i>Section:</div>
@@ -103,20 +108,27 @@ $user = (!empty($data)) ? $data[0] : null;
                         <div class="causeTextBox">
                             <div id="causeTextFirstLineBox">
                                 <div id="causeTextFirstLineBoxLeft">
-                                    <label for="cause"><b style="font-weight: bold;">เหตุผล/รายละเอียดในการขอดำเนินการ :</b></label>
+                                    <b style="font-weight: bold;">เหตุผล/รายละเอียดในการขอดำเนินการ :</b>
                                 </div>
                                 <div id="causeTextFirstLineBoxRight">
-                                    <input type="text" id="cause1" name="cause" class="causeText limit-width">
+                                    <input type="text" id="cause1" name="cause1" class="causeText limit-width">
                                 </div>
                             </div>
-                            <input type="text" id="cause2" name="cause" class="causeText limit-width"><br>
-                            <input type="text" id="cause3" name="cause" class="causeText limit-width">
+                            <input type="text" id="cause2" name="cause2" class="causeText limit-width"><br>
+                            <input type="text" id="cause3" name="cause3" class="causeText limit-width">
                         </div>
+
+                        <hr style="margin:25px 0; border: 1px solid #e2e8f0">
 
                         <div class="FormFooterContainer">
                             <div class="FormConfirmLeftItem">
-                                <label for="nameText"><span style="color: red;">* </span><b style="font-weight: bold;">ลงชื่อ: </b></label><br>
-                                <input type="text" id="nameText" name="NameText" style="width: 100%;" class="limit-width">
+                                <p style="margin: 0;"><span style="color: red;">* </span><b style="font-weight: bold;">การลงชื่อ</b></p>
+                                <input type="radio" id="useName" name="signature" value="useName" checked><label for="useName">ใช้ชื่อจริงในการเซ็นเอกสาร: <?php echo htmlspecialchars($user['Firstname'] ?? 'ไม่มีชื่อผู้ใช้'); ?></label><br>
+                                <input type="radio" id="useSignature" name="signature" value="useSignature" <?php if(empty($user['Signature'])) echo 'disabled'; ?>><label for="useSignature" id="useSignatureLabel">ใช้ลายเซ็นในการเซ็นเอกสาร:
+                                <?php if (!empty($user['Signature'])): ?>
+                                    <img src="<?= $user['Signature'] ?>" style="max-height: 80px; display: block; max-width: 225px;">
+                                <?php endif ?>
+                                 </label>
                                 <p class="requiredText" id="check3" hidden><i class="fa-solid fa-circle-info"></i> กรุณากรอกฟอร์มที่กำหนดให้ครบทุกช่อง</p>
                             </div>
                             <div class="FormConfirmRightItem">
@@ -128,10 +140,10 @@ $user = (!empty($data)) ? $data[0] : null;
                                     <i class="fa-solid fa-circle-xmark FormConfirmIcon"></i>
                                     <p class="FormConfirmLabel">ยกเลิก</p>
                                 </button>
-                                <button type="button" value="Cancel" class="FormConfirmButton" id="downloadButton" onclick="DownloadForm()">
+                                <!-- <button type="button" value="Cancel" class="FormConfirmButton" id="downloadButton" onclick="DownloadForm()">
                                     <i class="fa-solid fa-circle-down FormConfirmIcon"></i>
                                     <p class="FormConfirmLabel">ดาวน์โหลด</p>
-                                </button>
+                                </button> -->
                             </div>
                         </div>
                     </form>

@@ -84,6 +84,3 @@ document.getElementById("computerForm")?.addEventListener("submit", function(eve
         event.preventDefault();
     }
 });
-
-/*Fix ResetComputer Form*/ 
-/*Create Edit Computer*/ 

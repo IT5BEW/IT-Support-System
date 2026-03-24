@@ -51,6 +51,40 @@ input[type="checkbox"]{
 }
 input:disabled, select:disabled{background: var(--disable); cursor: not-allowed;}
 
+input[type="radio"] {
+    /* 1. ลบหน้าตาเดิมออก และลบ margin */
+    appearance: none;
+    -webkit-appearance: none;
+    margin: 0 5px 0 0;
+    padding: 0;
+
+    /* 2. กำหนดขนาดและสีขอบที่ต้องการ */
+    width: 20px; 
+    height: 20px; 
+    border-radius: 50%;
+    
+    /* 3. จัดตำแหน่งให้อยู่กลางข้อความ */
+    vertical-align: middle;
+    display: inline-grid;
+    place-content: center;
+    cursor: pointer;
+}
+
+/* 4. ใส่สีจุดตรงกลางเมื่อถูกเลือก (Optional) */
+input[type="radio"]::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: 120ms transform ease-in-out;
+    box-shadow: inset 1em 1em rgba(11, 107, 211, 1); /* สีจุดข้างใน */
+}
+
+input[type="radio"]:checked::before {
+  transform: scale(1);
+}
+
 #forminputSection{max-width: 850px; margin: 0 auto;}
 
 #logo{height: 200px;}
@@ -129,8 +163,9 @@ input:disabled, select:disabled{background: var(--disable); cursor: not-allowed;
 
 .FormFooterContainer{display:flex; margin-top: 30px;}
 
-.FormConfirmLeftItem{width: 50%;}
-.FormConfirmRightItem{display: flex; margin: auto 0 auto auto;}
+.FormConfirmLeftItem{width: 75%;}
+.FormConfirmRightItem{display: flex; margin: auto 0 0 auto;}
+#useSignatureLabel{display: inline-flex;}
 
 .FormConfirmButton{
     display: flex;
@@ -155,9 +190,9 @@ input:disabled, select:disabled{background: var(--disable); cursor: not-allowed;
 #cancelButton i, #cancelButton p {color: white;}
 #cancelButton:hover{border: 1px solid var(--darkred); background-color: var(--darkred);}
 
-#downloadButton{border: 1px solid var(--blue); background-color: var(--blue); cursor: pointer;}
+/* #downloadButton{border: 1px solid var(--blue); background-color: var(--blue); cursor: pointer;}
 #downloadButton i, #downloadButton p {color: white;}
-#downloadButton:hover{border: 1px solid var(--darkblue); background-color: var(--darkblue);}
+#downloadButton:hover{border: 1px solid var(--darkblue); background-color: var(--darkblue);} */
 
 .required{border: 1px solid var(--borderRed); background: var(--inputBGRed);}
 .requiredText{font-size: 16px; color: red; margin: 10px 0 0;}
@@ -184,8 +219,12 @@ input:disabled, select:disabled{background: var(--disable); cursor: not-allowed;
     .FormConfirmIcon{font-size: 20px;}
     .FormConfirmLabel{font-size: 16px;}
     .requiredText{font-size: 14px;}
+    #causeTextFirstLineBox{flex-direction: column;}
     #causeTextFirstLineBoxLeft{width: 100%;} 
-    #causeTextFirstLineBoxRight{display: none;}
+    #causeTextFirstLineBoxRight{width: 100%;}
 }
 
-@media screen and (max-width: 600px){#logo{height: 100px;}}
+@media screen and (max-width: 600px){
+    #logo{height: 100px;}
+    #useSignatureLabel{display: inline-block;}
+}

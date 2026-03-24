@@ -13,6 +13,7 @@ $logged_user  = $_SESSION['user_id'];
 $data = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($logged_user) . "&select=*");
 $user = (!empty($data)) ? $data[0] : null;
 $computers = supabase_query("/rest/v1/Computer?select=*") ?? [];
+usort($computers, function($a, $b) {return strnatcmp($a['Equipment_ID'], $b['Equipment_ID']);});
 $computerMap = [];
 foreach ($computers as $com) {
     // ใช้ Equipment_ID เป็น Key แทนเลข 0, 1
@@ -142,7 +143,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="formItemRow">
                                 <label class="formLabel" for="computer_select">คอมพิวเตอร์</label>
                                 <select id="computer_select" name="computer_select" class="formInput" onfocus="this.size=10;" onblur="this.size=1;" onchange="this.size=1; this.blur();">
-                                    <?php natsort($computers); $myComputer = $user['Equipment_ID']; ?>
+                                    <?php $myComputer = $user['Equipment_ID']; ?>
                                     <option value="<?= $myComputer ?>" selected><?= $myComputer ?></option>
                                     <?php foreach ($computers as $eachdata): ?>
                                         <?php if ($eachdata['Equipment_ID'] == $myComputer) continue; ?>
