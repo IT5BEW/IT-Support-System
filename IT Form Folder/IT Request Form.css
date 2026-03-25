@@ -219,12 +219,18 @@ input[type="radio"]:checked::before {
     .FormConfirmIcon{font-size: 20px;}
     .FormConfirmLabel{font-size: 16px;}
     .requiredText{font-size: 14px;}
-    #causeTextFirstLineBox{flex-direction: column;}
     #causeTextFirstLineBoxLeft{width: 100%;} 
     #causeTextFirstLineBoxRight{width: 100%;}
+}
+
+@media screen and (max-width: 700px){
+    #causeTextFirstLineBoxLeft{width: 135%;}
 }
 
 @media screen and (max-width: 600px){
     #logo{height: 100px;}
     #useSignatureLabel{display: inline-block;}
+    #causeTextFirstLineBox{flex-direction: column;}
+    #causeTextFirstLineBoxLeft{width: 100%;} 
+    #causeTextFirstLineBoxRight{width: 100%;}
 }

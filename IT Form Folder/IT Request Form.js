@@ -14,8 +14,6 @@ const Cause1 = document.getElementById('cause1')
 const Cause2 = document.getElementById('cause2')
 const Cause3 = document.getElementById('cause3')
 
-const nameText = document.getElementById('nameText')
-
 FixCom.addEventListener("click", CheckForm1)
 FixETC.addEventListener("click", CheckForm1)
 
@@ -67,7 +65,9 @@ function CheckForm2(){
 }
 
 function CheckForm3(){
-  var check = CheckForm(nameText);
+  const selectedRadio = document.querySelector('input[name="signature"]:checked');
+  var check = true;
+  if (!selectedRadio) {check = false;}
   document.getElementById("check3").hidden = check;
   return check;
 }
@@ -111,4 +111,17 @@ function restrictInputByWidth(inputElement, offset = 5) {
 // Apply Limit to Text Box
 document.querySelectorAll('.limit-width').forEach(el => {
   restrictInputByWidth(el);
+});
+
+document.getElementById("mainForm")?.addEventListener("submit", function(event) {
+  var check7 = CheckForm1()
+  var check8 = CheckForm2()
+  var check9 = CheckForm3()
+  if (!check7 || !check8 || !check9) {
+    event.preventDefault();
+    return;
+  }
+  if (!confirm('ยืนยันการส่งใบขอแจ้งซ่อมหรือไม่?')) {
+    event.preventDefault();
+  }
 });

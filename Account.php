@@ -283,6 +283,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } 
             else {
                 $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";
+                header("Location: " . $_SERVER['PHP_SELF']);
+                exit;
             }
         }
     }
