@@ -68,6 +68,7 @@ input:disabled, select:disabled{background: var(--disable); cursor: not-allowed;
     max-height: 400px; /* ความสูงหน้าประวัติ */
     overflow-y: auto;
     border: 1px solid var(--border);
+    border-radius: 10px;
 }
 #historyTable{
     border-collapse: collapse;
@@ -81,6 +82,10 @@ input:disabled, select:disabled{background: var(--disable); cursor: not-allowed;
     text-align: left;
     /* cursor: pointer; */
     z-index: 5;
+}
+#historyTable td{
+    padding: 12px;
+    border-top: 1px solid var(--border);
 }
 
 @media screen and (max-width: 875px){

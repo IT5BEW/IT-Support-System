@@ -7,6 +7,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: login.php");
     exit;
 }
+$history = supabase_query("/rest/v1/RequestForm?User_ID=eq." . urlencode($logged_user) . "&select=*");
 ?>
 
 <!DOCTYPE html>
@@ -42,9 +43,18 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                                 <th>หัวข้อ</th>
                                 <th>การดำเนินการ</th>
                                 <th>สถานะ</th>
+                                <th>รายละเอียด</th>
+                            </tr>
+                            <tr>
+                                <td>test</td>
+                                <td>testtesttesttest</td>
+                                <td>test</td>
+                                <td>test</td>
+                                <td>test</td>
                             </tr>
                         </table>
                     </div>
+                    <script>console.log(<?php ?>)</script>
                 </div>
             </div>
         </div>

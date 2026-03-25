@@ -53,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $date_formatted = $date->format('YmdHis');
             $date_ymd = $date->format('Y-m-d');
 
-            $form_id = $user['Firstname'] . "_" . $date_formatted;
+            $form_id = $user['User_ID'] . "_" . $date_formatted;
 
             if(!$etc){$etctext = '';}
 
