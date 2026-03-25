@@ -60,7 +60,7 @@ $user = (!empty($data)) ? $data[0] : null;
                     <hr style="margin:25px 0; border: 1px solid #e2e8f0">
                     <div class="buttonContainer">
                         <a href="IT Request Form" style="text-decoration: none;"><button class="button" id="report"><i class="fa-regular fa-file-lines"></i>ใบแจ้งซ่อม</button></a>        
-                        <a href="" style="text-decoration: none;"><button class="button" id="history"><i class="fa-solid fa-clock"></i>ประวัติการแจ้งซ่อม</button></a>
+                        <a href="RequestHistory" style="text-decoration: none;"><button class="button" id="history"><i class="fa-solid fa-clock"></i>ประวัติการแจ้งซ่อม</button></a>
                         <a href="Account" style="text-decoration: none;"><button class="button" id="account"><i class="fa-solid fa-user"></i>แก้ไขข้อมูล<br>ผู้ใช้</button></a>
                         <?php if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'): ?>
                             <a href="Computer" style="text-decoration: none;"><button class="button" id="pc"><i class="fa-solid fa-computer"></i>แก้ไขข้อมูล<br>คอมพิวเตอร์</button></a>

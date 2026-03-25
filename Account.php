@@ -332,7 +332,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 ?>
 
-<!DOCTYPE php>
+<!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">

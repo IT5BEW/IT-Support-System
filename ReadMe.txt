@@ -4,8 +4,10 @@ Made by Siwanart Worasaksirikun
 --------------------------------------------
 Done:
  - User Login System
- - Creat / Edit User System
+ - Create / Edit User System
+ - Create / Edit Computer
+ - Create Request Form
 --------------------------------------------
 In Progress:
- - Creat / Edit Computer
+ - View Request History
 --------------------------------------------

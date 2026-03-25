@@ -125,3 +125,7 @@ document.getElementById("mainForm")?.addEventListener("submit", function(event) 
     event.preventDefault();
   }
 });
+
+/*
+add input if no com???
+*/
