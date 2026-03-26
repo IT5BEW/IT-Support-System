@@ -34,6 +34,7 @@ document.getElementById('computer_select')?.addEventListener('change', function(
 
 function NewComputer(newUser) {
     const computerSelect = document.getElementById('computerSelect');
+    const computer_select_box = document.getElementById('computer_select');
     const computerForm = document.getElementById('computerForm');
     const computerButton = document.getElementById('computerButton');
     const computerCreateButton = document.getElementById('computerCreateButton');
@@ -49,6 +50,9 @@ function NewComputer(newUser) {
         if (computerButton) computerButton.style.display = 'flex';
         if (computerCreateButton) computerCreateButton.style.display = 'none';
         if (computerForm) computerForm.reset();
+
+    const currentCOM = computer_select_box ? computer_select_box.value : null;
+    renderComputerInfo(currentCOM);
     }
 }
 

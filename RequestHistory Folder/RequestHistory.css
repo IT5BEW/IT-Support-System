@@ -4,10 +4,18 @@
     --inputBg: #f8fbff;
     --focusBorder: rgba(11, 107, 211, 0.45);
     --focusHover: 0 0 0 3px rgba(11, 107, 211, 0.15);
-    --blue: #3498db;
-    --darkblue: #2980b9;
-    --green: #2ecc71;
-    --darkgreen: #27ae60;
+    --statusRedBG: #FEE2E2;
+    --statusRedBD: #EF4444;
+    --statusRedTX: #991B1B;
+    --statusYellowBG: #FEF3C7;
+    --statusYellowBD: #F59E0B;
+    --statusYellowTX: #92400E;
+    --statusGreenBG: #DCFCE7;
+    --statusGreenBD: #22C55E;
+    --statusGreenTX: #166534;
+    --statusBlueBG: #DBEAFE;
+    --statusBlueBD: #3B82F6;
+    --statusBlueTX: #1E40AF;
 }
 
 *{
@@ -29,7 +37,7 @@ html, body{
     margin: 30px 0px;
 }
 
-input, select, textarea{
+input{
     font-size: 18px; 
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -40,19 +48,29 @@ input, select, textarea{
     display: inline-block;
     vertical-align: middle;
 }
-input:focus, select:focus, textarea:focus {
+input:focus{
     outline: none !important;
     border-color: var(--focusBorder);
     box-shadow: var(--focusHover);
 }
-input[type="checkbox"]{
-    width: 20px; 
-    height: 20px; 
-    margin: 0; 
-    display: inline-block;
-    vertical-align: middle;
+
+input:disabled{background: var(--disable); cursor: not-allowed;}
+
+.button{
+    display: flex;
+    color: white;
+    cursor: pointer;
+    border-radius: 10px;
+    justify-content: center;
+    line-height: 20px;
+    gap: 10px;
+    padding: 10px;
 }
-input:disabled, select:disabled{background: var(--disable); cursor: not-allowed;}
+.button i{
+    font-size: large;
+    align-self: center;
+}
+.buttonLabel{font-size: 18px; margin: 0;}
 
 #header{
     display: flex;
@@ -74,23 +92,63 @@ input:disabled, select:disabled{background: var(--disable); cursor: not-allowed;
     border-collapse: collapse;
     width: 100%;
 }
+#historyTable th, #historyTable td {
+    padding: 12px;
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border); 
+}
 #historyTable th{
     position: sticky;
     top: 0;
-    background: rgba(11, 107, 211, 0.12);
-    padding: 12px;
+    background: #E1EDFA;
     text-align: left;
     /* cursor: pointer; */
     z-index: 5;
 }
-#historyTable td{
-    padding: 12px;
-    border-top: 1px solid var(--border);
+#historyTable th:first-child, #historyTable td:first-child {border-left: none; }
+#historyTable tr:first-child{border-top: none;}
+
+.ulTable{margin: 0; padding-left: 20px;}
+.ulTable li{padding: 0px;}
+
+.dateCol{min-width: 100px;}
+.fixCol{min-width: 285px;}
+.topicCol{min-width: 245px;}
+.statusCol{min-width: 135px;}
+.buttonCol{min-width: 135px;}
+.searchBtn{justify-content: center; align-items: center;}
+
+.status{
+    padding: 5px;
+    border-radius: 10px;
+    text-align: center;
 }
+.statusRed, #denyBtn{
+    background: var(--statusRedBG);
+    border: 2px solid var(--statusRedBD);
+    color: var(--statusRedTX);
+}
+.statusYellow, #waitBtn{
+    background: var(--statusYellowBG);
+    border: 2px solid var(--statusYellowBD);
+    color: var(--statusYellowTX);
+}
+.statusGreen, #completeBtn{
+    background: var(--statusGreenBG);
+    border: 2px solid var(--statusGreenBD);
+    color: var(--statusGreenTX);
+}
+#allBtn{
+    background: var(--statusBlueBG);
+    border: 2px solid var(--statusBlueBD);
+    color: var(--statusBlueTX);
+}
+
 
 @media screen and (max-width: 875px){
     .mainContainer{padding: 20px;}
     #header{flex-direction: column;}
     #headerText{margin: 0 0 10px 0;}
     #searchBox{width: 100%;}
+    .searchBtn{flex: 1 1 calc(50% - 10px);}
 }
