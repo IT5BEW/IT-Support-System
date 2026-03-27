@@ -11,8 +11,10 @@
     --darkred: #dc2626;
     --green: #23C85F;
     --darkgreen: #16a34a;
-    --blue: #0b6bd3;
-    --darkblue: #095bb3;
+    --orange: #f39c12;
+    --darkorange: #e67e22;
+    --gray: #94A3B8;
+    --darkgray:	#64748B;
 }
 
 *{
@@ -189,6 +191,14 @@ input[type="radio"]:checked::before {
 #cancelButton{border: 1px solid var(--red); background-color: var(--red); cursor: pointer;}
 #cancelButton i, #cancelButton p {color: white;}
 #cancelButton:hover{border: 1px solid var(--darkred); background-color: var(--darkred);}
+
+#editButton{border: 1px solid var(--orange); background-color: var(--orange); cursor: pointer;}
+#editButton i, #editButton p {color: white;}
+#editButton:hover{border: 1px solid var(--darkorange); background-color: var(--darkorange);}
+
+#backButton{border: 1px solid var(--gray); background-color: var(--gray); cursor: pointer;}
+#backButton i, #backButton p {color: white;}
+#backButton:hover{border: 1px solid var(--darkgray); background-color: var(--darkgray);}
 
 /* #downloadButton{border: 1px solid var(--blue); background-color: var(--blue); cursor: pointer;}
 #downloadButton i, #downloadButton p {color: white;}

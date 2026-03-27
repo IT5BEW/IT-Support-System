@@ -16,6 +16,10 @@
     --statusBlueBG: #DBEAFE;
     --statusBlueBD: #3B82F6;
     --statusBlueTX: #1E40AF;
+    --edit: #f39c12;
+    --darkedit: #e67e22;
+    --info: #94A3B8;
+    --darkinfo:	#64748B;
 }
 
 *{
@@ -94,8 +98,10 @@ input:disabled{background: var(--disable); cursor: not-allowed;}
 }
 #historyTable th, #historyTable td {
     padding: 12px;
-    border-top: 1px solid var(--border);
     border-left: 1px solid var(--border); 
+}
+#historyTable td {
+    border-top: 1px solid var(--border);
 }
 #historyTable th{
     position: sticky;
@@ -143,6 +149,35 @@ input:disabled{background: var(--disable); cursor: not-allowed;}
     border: 2px solid var(--statusBlueBD);
     color: var(--statusBlueTX);
 }
+
+.buttonColContainer{
+    display: flex;
+    flex-direction: column;
+    align-items: baseline;
+    gap: 5px;
+}
+.smallbutton{
+    display: flex;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    justify-content: center;
+    line-height: 20px;
+    gap: 5px;
+    padding: 5x;
+}
+.smallbutton i{
+    font-size: small;
+    align-self: center;
+}
+.smallbuttonLabel{font-size: small; margin: 0;}
+
+.editButton{border: 1px solid var(--edit); background-color: var(--edit); cursor: pointer;}
+.editButton i, .editButton p {color: white;}
+.editButton:hover{border: 1px solid var(--darkedit); background-color: var(--darkedit);}
+.infoButton{border: 1px solid var(--info); background-color: var(--info); cursor: pointer;}
+.infoButton i, .infoButton p {color: white;}
+.infoButton:hover{border: 1px solid var(--darkinfo); background-color: var(--darkinfo);}
 
 
 @media screen and (max-width: 875px){

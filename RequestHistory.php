@@ -63,11 +63,11 @@ foreach($history as $his){
                     <div id="tableContainer">
                         <table id="historyTable">
                             <tr>
-                                <th>วันที่</th>
-                                <th>หัวข้อที่ต้องการ</th>
-                                <th>การดำเนินการ</th>
-                                <th>สถานะ</th>
-                                <th>รายละเอียด</th>
+                                <th class="dateCol">วันที่</th>
+                                <th class="fixCol">หัวข้อที่ต้องการ</th>
+                                <th class="topicCol">การดำเนินการ</th>
+                                <th class="statusCol">สถานะ</th>
+                                <th class="buttonCol">รายละเอียด</th>
                             </tr>
                             <?php foreach($historyMap as $h): ?>
                                 <tr>
@@ -95,7 +95,17 @@ foreach($history as $his){
                                         <?php else: ?><div class="status statusYellow">สถานะ</div>
                                         <?php endif ?>
                                     </td>
-                                    <td class="buttonCol">test</td>
+                                    <td class="buttonCol">
+                                        <div class="buttonColContainer">
+                                            <?php if($h['FormStatus'] == 'WaitForApproval'): ?>
+                                                <button class="smallbutton editButton" onclick="window.location.href='IT Request Form.php?form_id=<?php echo $h['Form_ID'] ?>'">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                    <p class="smallbuttonLabel">แก้ไขใบแจ้งซ่อม</p>
+                                                </button>
+                                            <?php endif ?>
+                                            <button class="smallbutton infoButton"><i class="fa-solid fa-file-lines"></i><p class="smallbuttonLabel">รายละเอียด</p></button>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </table>
