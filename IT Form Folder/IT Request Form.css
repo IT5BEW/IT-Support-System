@@ -239,7 +239,7 @@ input[type="radio"]:checked::before {
 
 @media screen and (max-width: 600px){
     #logo{height: 100px;}
-    #useSignatureLabel{display: inline-block;}
+    #useSignatureLabel{flex-direction: column;}
     #causeTextFirstLineBox{flex-direction: column;}
     #causeTextFirstLineBoxLeft{width: 100%;} 
     #causeTextFirstLineBoxRight{width: 100%;}

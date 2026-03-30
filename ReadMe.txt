@@ -6,8 +6,9 @@ Done:
  - User Login System
  - Create / Edit User System
  - Create / Edit Computer
- - Create Request Form
+ - Create / Edit Request Form
+ - View Request History
 --------------------------------------------
 In Progress:
- - View Request History
+
 --------------------------------------------
