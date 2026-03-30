@@ -121,7 +121,12 @@ document.getElementById("mainForm")?.addEventListener("submit", function(event) 
     event.preventDefault();
     return;
   }
-  if (!confirm('ยืนยันการส่งใบขอแจ้งซ่อมหรือไม่?')) {
+
+  const submitter = event.submitter;
+  if (submitter.name === "edit_form") {confirmMessage = "ยืนยันการแก้ไขใบขอแจ้งซ่อมใช่หรือไม่?";} 
+  else {confirmMessage = "ยืนยันการส่งใบขอแจ้งซ่อมหรือไม่?";} 
+  
+  if (!confirm(confirmMessage)) {
     event.preventDefault();
   }
 });
