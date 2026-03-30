@@ -1,0 +1,30 @@
+:root{
+    --bg: #82B9F0;
+    --border: #dbe7f5;
+    --inputBg: #f8fbff;
+    --focusBorder: rgba(11, 107, 211, 0.45);
+    --focusHover: 0 0 0 3px rgba(11, 107, 211, 0.15);
+    --blue: #3498db;
+    --darkblue: #2980b9;
+    --green: #2ecc71;
+    --darkgreen: #27ae60;
+}
+
+*{
+    font-family: "Prompt", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+html, body{
+    margin: 0;
+    background-color: var(--bg);
+}
+
+#mainSection{max-width: 850px; margin: 0 auto;}
+.mainContainer{padding: 30px 0;}
+.itemContainer{
+    background-color: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin: 30px 0px;
+}

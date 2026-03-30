@@ -15,7 +15,7 @@ $user = (!empty($data)) ? $data[0] : null;
 
 ?>
 
-<!DOCTYPE php>
+<!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
