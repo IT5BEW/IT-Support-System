@@ -124,7 +124,10 @@ foreach($history as $his){
                                                     <p class="smallbuttonLabel">แก้ไขใบแจ้งซ่อม</p>
                                                 </button>
                                             <?php endif ?>
-                                            <button class="smallbutton infoButton"><i class="fa-solid fa-file-lines"></i><p class="smallbuttonLabel">รายละเอียด</p></button>
+                                            <button class="smallbutton infoButton" onclick="window.location.href='RequestDetails.php?form_id=<?php echo $h['Form_ID'] ?>'">
+                                                <i class="fa-solid fa-file-lines"></i>
+                                                <p class="smallbuttonLabel">รายละเอียด</p>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>

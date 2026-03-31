@@ -4,10 +4,10 @@
     --inputBg: #f8fbff;
     --focusBorder: rgba(11, 107, 211, 0.45);
     --focusHover: 0 0 0 3px rgba(11, 107, 211, 0.15);
-    --blue: #3498db;
-    --darkblue: #2980b9;
+    --orange: #f39c12;
     --green: #2ecc71;
-    --darkgreen: #27ae60;
+    --red: #e74c3c;
+    --gray: #ddd;
 }
 
 *{
@@ -27,4 +27,93 @@ html, body{
     border-radius: 15px;
     padding: 30px;
     margin: 30px 0px;
+}
+
+/* ตั้งค่าพื้นฐาน */
+.progressbar {
+  display: flex;
+  counter-reset: step;
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+  font-family: sans-serif;
+}
+
+.progressbar li {
+  position: relative;
+  flex: 1;
+  text-align: center;
+  color: #999;
+  font-size: 16px;
+}
+
+/* --- 1. ตั้งค่าวงกลมให้รับสีจาก JS --- */
+.progressbar li::before {
+  content: counter(step);
+  counter-increment: step;
+  width: 35px; 
+  height: 35px; 
+  line-height: 35px;
+  display: block; margin: 0 auto 10px;
+  border-radius: 50%;
+  position: relative; 
+  z-index: 2;
+  transition: all 0.3s;
+
+  /* ใช้สีที่ส่งมาจาก JS (ถ้าไม่มีให้ใช้สีเทา) */
+  background-color:  var(--circle-color, var(--gray));
+  border: 2px solid  var(--circle-color, var(--gray));
+  color: white; /* ตัวเลข/ไอคอนสีขาว */
+}
+
+/* กรณีขั้นตอนที่ยังไม่ถึง: ให้วงกลมเป็นสีขาวขอบเทา ตัวเลขสีเทา */
+.progressbar li:not(.done):not(.active):not(.cancel)::before {
+  background-color: white;
+  color: #999;
+}
+
+/* --- 2. ตั้งค่าเส้นให้เป็น 2 สี --- */
+.progressbar li::after {
+  content: "";
+  position: absolute;
+  width: 100%; 
+  height: 4px;
+  top: 17.5px; 
+  left: -50%; 
+  z-index: 1;
+  
+  /* ครึ่งซ้ายรับสีจากตัวก่อนหน้า ครึ่งขวารับสีตัวเอง */
+  background: linear-gradient(to right, 
+    var(--left-color, var(--gray)) 50%, 
+    var(--right-color, var(--gray)) 50%
+  );
+  transition: all 0.3s;
+}
+
+/* ซ่อนเส้นของขั้นตอนแรกสุด */
+.progressbar li:first-child:after {
+  content: none;
+}
+
+.progressbar li.done { color: var(--green); }
+.progressbar li.done::before {content: "✓";}
+
+.progressbar li.active { color: var(--orange);}
+
+.progressbar li.cancel { color: var(--red); }
+.progressbar li.cancel::before {content: "✕";}
+
+.FormInfoContainer {display: flex; gap: 10px;}
+.FormInfoLeft, .FormInfoRight {flex: 1;}
+
+@media screen and (max-width: 875px){
+    .mainContainer{padding: 20px;}
+    .progressbar li {font-size: 14px;}
+    .progressbar li::before {
+        width: 30px; 
+        height: 30px; 
+        line-height: 30px;
+    }
+    .progressbar li::after {top: 15px;}
+    .FormInfoContainer {flex-direction: column; gap: 0px;}
 }
