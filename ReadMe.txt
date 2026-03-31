@@ -3,13 +3,16 @@ IT Support System
 Made by Siwanart Worasaksirikun
 --------------------------------------------
 Done:
- - User Login System
+ - User System (Create / Edit / Change)
  - Create / Edit User System
  - Create / Edit Computer
  - Create / Edit Request Form
+ - Change Signature file name when change User ID
  - View Request History
 --------------------------------------------
 In Progress:
- - Change Signature file name when change User ID
  - All information page
+ - HoD Approval
+ - IT Head Approval
+ - IT Fix
 --------------------------------------------

@@ -8,8 +8,29 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit;
 }
 $logged_user  = $_SESSION['user_id'];
-$history = supabase_query("/rest/v1/RequestForm?User_ID=eq." . urlencode($logged_user) . "&select=*");
-usort($history, function($a, $b) {return strnatcmp($a['Form_ID'], $b['Form_ID']);});
+$history = supabase_query("/rest/v1/RequestForm?User_ID=eq." . urlencode($logged_user) . "&select=*&order=Date.desc");
+usort($history, function($a, $b) {
+    // 1. กำหนดลำดับ (Priority) ให้แต่ละ Status (เลขน้อย = อยู่บนสุด)
+    $priority = [
+        'WaitForApproval'    => 1,
+        'WaitForConfirm'     => 2,
+        'WaitForFixing'      => 3,
+        'FormCreated'        => 4,
+        'Complete'           => 5,
+        'HoD_Denied'         => 6,
+        'IT_Director_Denied' => 7,
+    ];
+
+    // ดึงค่าลำดับ ถ้าไม่มีในลิสต์ให้เป็น 99 (อยู่ล่างสุด)
+    $pA = $priority[$a['FormStatus']] ?? 99;
+    $pB = $priority[$b['FormStatus']] ?? 99;
+
+    // 2. ถ้าสถานะต่างกัน ให้เรียงตามลำดับความสำคัญ (Status Priority)
+    if ($pA !== $pB) {return $pA - $pB;}
+
+    // 3. ถ้าสถานะเหมือนกัน ให้เรียงตามวันที่ (เอา "ใหม่ล่าสุด" ขึ้นก่อน)
+    return strtotime($b['Date']) - strtotime($a['Date']);
+});
 
 $historyMap = [];
 foreach($history as $his){

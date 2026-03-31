@@ -173,6 +173,10 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             header("Location: " . strtok($_SERVER["REQUEST_URI"], '?')); 
             exit();
         }
+        if ($editReport['User_ID'] !== $user['User_ID']) {
+            header("Location: " . strtok($_SERVER["REQUEST_URI"], '?')); 
+            exit();
+        }
         $userData = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($editReport['User_ID']) . "&select=Firstname,Section") ?? [];
         $editUser = (!empty($userData)) ? $userData[0] : null;
 
