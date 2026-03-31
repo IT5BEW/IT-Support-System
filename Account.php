@@ -319,8 +319,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($current_id), "PATCH", $data, $status);
 
             if ($status >= 200 && $status < 300) {
-                $_SESSION['flash_message'] = "แก้ไขรหัสผู้ใช้สำเร็จ";
-                if ($current_id === $_SESSION['user_id']) {$_SESSION['user_id'] = $new_id;}
+                if (!empty($target_user['Signature'])) {
+                    $result = updateSignatureWhenChangeUserID($current_id, $new_id);
+                    if(!$result['success']){
+                        $error_data = json_decode($result['error_msg'], true);
+                        $clean_msg = $error_data['error'] ?? $error_data['message'] ?? $result['error_msg'] ?? 'Unknown Error';
+                        $_SESSION['flash_message'] = "แก้ไขรหัสผู้ใช้สำเร็จ แต่เกิดข้อผิดพลาดในการอัปเดตรูปภาพลายเซ็น (Status: {$result['status']}, Error: $clean_msg)";
+                    }
+                    else{
+                        $signature_data = ["Signature" => $result['url']];
+                        $signature_status = 0;
+                        supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($new_id), "PATCH", $signature_data, $signature_status);
+                        
+                        if($signature_status >= 200 && $signature_status < 300){$_SESSION['flash_message'] = "แก้ไขรหัสผู้ใช้สำเร็จ";}
+                        else{$_SESSION['flash_message'] = "แก้ไขรหัสผู้ใช้สำเร็จ แต่เกิดข้อผิดพลาดในการอัปเดตรูปภาพลายเซ็น (Status: $signature_status)";}
+                        
+                        if ($current_id === $_SESSION['user_id']) {$_SESSION['user_id'] = $new_id;}
+                    }
+                }
+                else {$_SESSION['flash_message'] = "แก้ไขรหัสผู้ใช้สำเร็จ";}
             } 
             else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาด (Status: $status)";}
             
