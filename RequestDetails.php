@@ -79,7 +79,7 @@ function getStepClass($stepNumber, $currentStatus) {
         <section id="mainSection">
             <div class="mainContainer">
                 <div class="itemContainer">
-                    <h1 style="font-weight: bold; margin-top: 0; text-align: center;">รายละเอียดใบขอแจ้งซ่อม</h1> 
+                    <h1 style="font-weight: bold; margin-top: 0; text-align: center;">รายละเอียด<span style="white-space: nowrap; font-weight: bold;">ใบขอแจ้งซ่อม</span></h1> 
                     <ul class="progressbar" id="progress-bar">
                         <li class="<?php echo getStepClass(1, $currentStatus); ?>">สร้างคำขอ</li>
                         <li class="<?php echo getStepClass(2, $currentStatus); ?>">อนุมัติ</li>
@@ -87,68 +87,93 @@ function getStepClass($stepNumber, $currentStatus) {
                         <li class="<?php echo getStepClass(4, $currentStatus); ?>">เสร็จสิ้น</li>
                     </ul>
 
-                    <h2 style="font-weight: bold; margin:0 0 10px;">1. รายละเอียดการแจ้งซ่อม</h2>
-                    <div class="FormInfoContainer">
-                        <div class="FormInfoLeft" style="padding: 0 10px;">
-                            <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดใบแจ้งซ่อม:</b></p>
-                            <ul style="margin: 0 0 10px;">
-                                <li>รหัสใบแจ้งซ่อม: <?php echo $detailReport['Form_ID']; ?></li>
-                                <li>วันที่แจ้งซ่อม: <?php echo $detailReport['Date']; ?></li>
-                            </ul>
-                            <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดผู้ใช้งาน:</b></p>
-                            <ul style="margin: 0 0 10px;">
-                                <li>Equipment ID: <?php echo $detailReport['Equipment_ID'] ?? 'ไม่มีคอมพิวเตอร์'; ?></li>
-                                <li>Com. Name: <?php echo $detailComp['ComName'] ?? 'ไม่มีชื่อคอมพิวเตอร์'; ?></li>
-                                <li>User: <?php echo $detailUser['Firstname'] ?? 'ไม่มีชื่อผู้ใช้'; ?></li>
-                                <li>Section: <?php echo $detailReport['Section'] ?? 'ไม่มีแผนก'; ?></li>
-                            </ul>
-                            <p style="margin: 0;"><b style="font-weight: bold;">หัวข้อที่ต้องการปรับปรุงแก้ไข:</b></p>
-                            <ul style="margin: 0 0 10px;">
-                                <?php if($detailReport['FixCom']): ?><li>ปรับปรุงแก้ไข คอมพิวเตอร์ โปรแกรมและอุปกรณ์ต่อพ่วง</li><?php endif ?>
-                                <?php if($detailReport['FixETC']): ?><li>ปรับปรุงแก้ไข อุปกรณ์ทางไอทีแบบอื่นๆ</li><?php endif ?>
-                            </ul>
-                            <p style="margin: 0;"><b style="font-weight: bold;">การดำเนินการ:</b></p>
-                            <ul style="margin: 0 0 10px;">
-                                <?php if($detailReport['ReInstall']): ?><li>ถอนหรือติดตั้งโปรแกรมใหม่</li><?php endif ?>
-                                <?php if($detailReport['Broken']): ?><li>อุปกรณ์ใช้งานไม่ได้ ชำรุด เสียหาย</li><?php endif ?>
-                                <?php if($detailReport['ETC']): ?><li><?php echo $detailReport['ETCText'] ?><?php endif ?>
-                            </ul>
-                        </div>
-                        
-                        <div class="FormInfoRight" style="padding: 0 10px;">
-                            <p style="margin: 0;"><b style="font-weight: bold;">เหตุผล:</b></p>
-                            <p style="margin: 0 0 10px;">
-                                <?php if(empty($detailReport['CauseText1']) && empty($detailReport['CauseText2']) && empty($detailReport['CauseText3'])): ?>
-                                    ไม่มีเหตุผลเพิ่มเติม
-                                <?php else: ?>
-                                    <?php echo $detailReport['CauseText1'] ?? ''; ?>
-                                    <?php echo $detailReport['CauseText2'] ?? ''; ?>
-                                    <?php echo $detailReport['CauseText3'] ?? ''; ?>
-                                <?php endif ?>
-                            </p>
-                            <p style="margin: 0;"><b style="font-weight: bold;">ภาพประกอบ:</b></p>
-                            <div style="width: 100%;">
-                                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQr_g65NtQWD7p3Ymgl6xfa6vh6bP6AD4LYqw&s" 
-                                alt="placeholder" style="object-fit: contain; width: 100%; height: 100%;">
+                    <div class="item">
+                        <h2 style="font-weight: bold; margin:0 0 10px;">1. รายละเอียด<span style="white-space: nowrap; font-weight: bold;">การแจ้งซ่อม</span></h2>
+                        <div class="FormInfoContainer">
+                            <div class="FormInfoLeft">
+                                <div class="FormInfoItem">
+                                    <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดใบแจ้งซ่อม:</b></p>
+                                    <ul style="margin: 0 0 10px;">
+                                        <li>รหัสใบแจ้งซ่อม: <?php echo $detailReport['Form_ID']; ?></li>
+                                        <li>วันที่แจ้งซ่อม: <?php echo $detailReport['Date']; ?></li>
+                                    </ul>
+                                    <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดผู้ใช้งาน:</b></p>
+                                    <ul style="margin: 0 0 10px;">
+                                        <li>Equipment ID: <?php echo $detailReport['Equipment_ID'] ?? 'ไม่มีคอมพิวเตอร์'; ?></li>
+                                        <li>Com. Name: <?php echo $detailComp['ComName'] ?? 'ไม่มีชื่อคอมพิวเตอร์'; ?></li>
+                                        <li>User: <?php echo $detailUser['Firstname'] ?? 'ไม่มีชื่อผู้ใช้'; ?></li>
+                                        <li>Section: <?php echo $detailReport['Section'] ?? 'ไม่มีแผนก'; ?></li>
+                                    </ul>
+                                    <p style="margin: 0;"><b style="font-weight: bold;">หัวข้อที่ต้องการปรับปรุงแก้ไข:</b></p>
+                                    <ul style="margin: 0 0 10px;">
+                                        <?php if($detailReport['FixCom']): ?><li>ปรับปรุงแก้ไข คอมพิวเตอร์ โปรแกรมและอุปกรณ์ต่อพ่วง</li><?php endif ?>
+                                        <?php if($detailReport['FixETC']): ?><li>ปรับปรุงแก้ไข อุปกรณ์ทางไอที<span style="white-space: nowrap;">แบบอื่นๆ</span></li><?php endif ?>
+                                    </ul>
+                                    <p style="margin: 0;"><b style="font-weight: bold;">การดำเนินการ:</b></p>
+                                    <ul style="margin: 0 0 10px;">
+                                        <?php if($detailReport['ReInstall']): ?><li>ถอนหรือติดตั้งโปรแกรมใหม่</li><?php endif ?>
+                                        <?php if($detailReport['Broken']): ?><li>อุปกรณ์ใช้งานไม่ได้ ชำรุด เสียหาย</li><?php endif ?>
+                                        <?php if($detailReport['ETC']): ?><li><?php echo $detailReport['ETCText'] ?><?php endif ?>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="FormInfoRight">
+                                <div class="FormInfoItem">
+                                    <p style="margin: 0;"><b style="font-weight: bold;">เหตุผล:</b></p>
+                                    <p style="margin: 0 0 10px;">
+                                        <?php if(empty($detailReport['CauseText1']) && empty($detailReport['CauseText2']) && empty($detailReport['CauseText3'])): ?>
+                                            ไม่มีเหตุผลเพิ่มเติม
+                                        <?php else: ?>
+                                            <?php echo $detailReport['CauseText1'] ?? ''; ?>
+                                            <?php echo $detailReport['CauseText2'] ?? ''; ?>
+                                            <?php echo $detailReport['CauseText3'] ?? ''; ?>
+                                        <?php endif ?>
+                                    </p>
+                                    <p style="margin: 0;"><b style="font-weight: bold;">ภาพประกอบ:</b></p>
+                                    <div style="width: 100%;">
+                                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQr_g65NtQWD7p3Ymgl6xfa6vh6bP6AD4LYqw&s" 
+                                        alt="placeholder" style="object-fit: contain; width: 100%; height: 100%;">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <hr style="margin:25px 0; border: 1px solid #e2e8f0">
+                    
 
                     <div class="FormInfoContainer">
-                        <div class="FormInfoLeft">
-                            <h2 style="font-weight: bold; margin:0 0 10px;">2. การอนุมัติจากหัวหน้าแผนก</h2>
-                        </div>
+                            <div class="FormInfoLeft item">
+                                <h2 style="font-weight: bold; margin:0 0 10px;">2. การอนุมัติจาก<span style="white-space: nowrap; font-weight: bold;">หัวหน้าแผนก</span></h2>
+                                <div class="FormInfoItem">
+                                    <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดการอนุมัติ:</b></p>
+                                    <ul style="margin: 0;">
+                                        <li>ผู้อนุมัติ: ทดสอบ</li>
+                                        <li>สถานะ: ทดสอบ</li>
+                                        <li>วันที่: ทดสอบ</li>
+                                    </ul>
+                                </div>
+                            </div>
                         
-                        <div class="FormInfoRight">    
-                            <h2 style="font-weight: bold; margin:0 0 10px;">3. การอนุมัติจากหัวหน้าฝ่ายไอที</h2>
-                        </div>
+                            <div class="FormInfoRight item">    
+                                <h2 style="font-weight: bold; margin:0 0 10px;">3. การอนุมัติจาก<span style="white-space: nowrap; font-weight: bold;">หัวหน้าฝ่ายไอที</span></h2>
+                                <div class="FormInfoItem">
+                                    <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดการอนุมัติ:</b></p>
+                                    <ul style="margin: 0;">
+                                        <li>ผู้อนุมัติ: ทดสอบ</li>
+                                        <li>สถานะ: ทดสอบ</li>
+                                        <li>วันที่: ทดสอบ</li>
+                                    </ul>
+                                </div>
+                            </div>
                     </div>
                     
                     <hr style="margin:25px 0; border: 1px solid #e2e8f0">
-
-                    <h2 style="font-weight: bold; margin:0 0 10px;">4. รายละเอียดการแก้ไข</h2>
+                    
+                    <div class="item">
+                        <h2 style="font-weight: bold; margin:0 0 10px;">4. รายละเอียดการแก้ไข</h2>
+                    </div>
                 </div>
             </div>
         </section>

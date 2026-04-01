@@ -103,10 +103,19 @@ html, body{
 .progressbar li.cancel { color: var(--red); }
 .progressbar li.cancel::before {content: "✕";}
 
+.item{
+  padding: 15px;
+  border-radius: 20px;
+  background-color: rgba(11, 107, 211, 0.12);
+  border: 1px solid rgba(11, 107, 211, 0.35);
+  overflow-wrap: break-word;
+}
 .FormInfoContainer {display: flex; gap: 10px;}
 .FormInfoLeft, .FormInfoRight {flex: 1;}
+.FormInfoItem{padding: 0 20px;}
 
 @media screen and (max-width: 875px){
+    h2{text-align: center;}
     .mainContainer{padding: 20px;}
     .progressbar li {font-size: 14px;}
     .progressbar li::before {
@@ -115,5 +124,6 @@ html, body{
         line-height: 30px;
     }
     .progressbar li::after {top: 15px;}
-    .FormInfoContainer {flex-direction: column; gap: 0px;}
+    .FormInfoContainer {flex-direction: column;}
+    .FormInfoItem{padding: 0;}
 }
