@@ -1,6 +1,5 @@
 <?php
 include 'Supabase.php';
-include 'Bucket.php';
 session_start();
 
 // เช็คความปลอดภัย: ถ้าไม่ได้ Login ให้เด้งกลับไปหน้า login.php
