@@ -289,6 +289,12 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
                         <hr style="margin:25px 0; border: 1px solid #e2e8f0">
 
+                        <p style="margin: 0;"><b style="font-weight: bold;">รูปภาพประกอบ :</b></p>
+                        <input type="file" id="detailImage" name="detailImage" style="width: 100%; height: auto; margin-top: 5px;" accept="image/*" onchange="previewImage(event)">
+                        <img id="output-image">
+
+                        <hr style="margin:25px 0; border: 1px solid #e2e8f0">
+
                         <div class="FormFooterContainer">
                             <div class="FormConfirmLeftItem">
                                 <p style="margin: 0;"><span style="color: red;">* </span><b style="font-weight: bold;">การลงชื่อ</b></p>

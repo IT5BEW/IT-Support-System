@@ -567,7 +567,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <?php if (!empty($user['Signature'])): ?>
                                         <img src="<?= $user['Signature'] ?>" style="max-height: 80px; display: block; max-width: 225px;">
                                     <?php else: ?>
-                                        <input type="file" id="signature" name="signature" style="width: 100%; height: auto;" accept="image/*" />
+                                        <input type="file" id="signature" name="signature" style="width: 100%; height: auto;" accept="image/*" onchange="previewImage(event)" />
+                                        <img id="output-image" style="max-height: 80px; display: block; max-width: 225px; margin-top: 10px; display: none;">
                                     <?php endif; ?>
                                 </div>
                             </div>

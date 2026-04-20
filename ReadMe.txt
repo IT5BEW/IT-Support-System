@@ -11,6 +11,8 @@ Done:
  - View Request History
 --------------------------------------------
 In Progress:
+ - Add Signature and Image to seperate folder
+ - Find a way to remove
  - All information page
  - HoD Approval
  - IT Head Approval

@@ -204,6 +204,13 @@ input[type="radio"]:checked::before {
 #downloadButton i, #downloadButton p {color: white;}
 #downloadButton:hover{border: 1px solid var(--darkblue); background-color: var(--darkblue);} */
 
+#output-image{
+    max-height: 600px;
+    max-width: 100%;
+    display: block;
+    margin: 10px auto 0px;
+}
+
 .required{border: 1px solid var(--borderRed); background: var(--inputBGRed);}
 .requiredText{font-size: 16px; color: red; margin: 10px 0 0;}
 
@@ -231,6 +238,7 @@ input[type="radio"]:checked::before {
     .requiredText{font-size: 14px;}
     #causeTextFirstLineBoxLeft{width: 100%;} 
     #causeTextFirstLineBoxRight{width: 100%;}
+    #output-image{max-height: 400px;}
 }
 
 @media screen and (max-width: 700px){

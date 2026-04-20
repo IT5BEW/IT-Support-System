@@ -231,7 +231,8 @@ function renderSignatureUI(userId, forceInput = false) {
         if (delButton) delButton.style.display = 'flex'; // โชว์ปุ่มลบ
     } else {
         // --- กรณีไม่มีรูป หรือ โหมดสร้างใหม่ ---
-        container.innerHTML = '<input type="file" id="signature" name="signature" style="width: 100%; height: auto;" accept="image/*" />';
+        container.innerHTML = '<input type="file" id="signature" name="signature" style="width: 100%; height: auto;" accept="image/*" onchange="previewImage(event)" /> \
+                                <img id="output-image" style="max-height: 80px; display: block; max-width: 225px; margin-top: 10px; display: none;">';
         label.setAttribute('for', 'signature');
         
         // 2. จัดการปุ่ม (ซ่อนทั้งคู่ถ้าเป็นโหมดสร้างใหม่, ถ้าโหมดแก้ไขให้โชว์ปุ่มอัปโหลด)
@@ -440,3 +441,29 @@ document.getElementById('editUserIDForm')?.addEventListener("submit", function(e
         event.preventDefault();
     }
 });
+
+function previewImage(event) {
+    const input = event.target;
+    const output = document.getElementById('output-image');
+
+    if (!output) {
+        console.error("หา Element ไอดี 'output-image' ไม่เจอครับ!");
+        return;
+    }
+
+    // ตรวจสอบว่ามีการเลือกไฟล์อย่างน้อย 1 ไฟล์หรือไม่
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+
+        reader.onload = function() {
+            output.src = reader.result;
+            output.style.display = 'block'; // แสดงรูปเมื่อโหลดเสร็จ
+        };
+
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        // หากไม่มีไฟล์ (เช่น กด Cancel) ให้ซ่อนรูปและล้างค่า src
+        output.src = "";
+        output.style.display = 'none';
+    }
+}

@@ -131,6 +131,32 @@ document.getElementById("mainForm")?.addEventListener("submit", function(event) 
   }
 });
 
+
+function previewImage(event) {
+    const input = event.target;
+    const output = document.getElementById('output-image');
+
+    if (!output) {
+        console.error("หา Element ไอดี 'output-image' ไม่เจอครับ!");
+        return;
+    }
+
+    // ตรวจสอบว่ามีการเลือกไฟล์อย่างน้อย 1 ไฟล์หรือไม่
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+
+        reader.onload = function() {
+            output.src = reader.result;
+            output.style.display = 'block'; // แสดงรูปเมื่อโหลดเสร็จ
+        };
+
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        // หากไม่มีไฟล์ (เช่น กด Cancel) ให้ซ่อนรูปและล้างค่า src
+        output.src = "";
+        output.style.display = 'none';
+    }
+}
 /*
 add input if no com???
 */
