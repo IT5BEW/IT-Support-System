@@ -117,6 +117,8 @@ document.querySelectorAll('.limit-width').forEach(el => {
 });
 
 document.getElementById("mainForm")?.addEventListener("submit", function(event) {
+  const submitter = event.submitter;
+
   var check7 = CheckForm1()
   var check8 = CheckForm2()
   var check9 = CheckForm3()
@@ -125,7 +127,6 @@ document.getElementById("mainForm")?.addEventListener("submit", function(event) 
     return;
   }
 
-  const submitter = event.submitter;
   if (submitter.name === "edit_form") {confirmMessage = "ยืนยันการแก้ไขใบขอแจ้งซ่อมใช่หรือไม่?";} 
   else {confirmMessage = "ยืนยันการส่งใบขอแจ้งซ่อมหรือไม่?";} 
   
@@ -166,6 +167,32 @@ function previewImage(event) {
         output.src = "";
         output.style.display = 'none';
     }
+}
+
+function execDeleteImage(formId) {
+    if (!confirm("คุณต้องการลบรูปภาพประกอบนี้ออกจากระบบใช่หรือไม่?")) return;
+
+    // สร้างฟอร์มชั่วคราว
+    const f = document.createElement('form');
+    f.method = 'POST';
+    f.action = window.location.pathname + '?form_id=' + formId; // ส่งกลับมาหน้าเดิมพร้อม ID
+
+    // สร้าง Input ชื่อ delete_image ให้ PHP เช็ค isset
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'delete_image';
+    actionInput.value = '1';
+
+    // สร้าง Input เก็บค่า Form ID
+    const idInput = document.createElement('input');
+    idInput.type = 'hidden';
+    idInput.name = 'form_id_to_save';
+    idInput.value = formId;
+
+    f.appendChild(actionInput);
+    f.appendChild(idInput);
+    document.body.appendChild(f);
+    f.submit(); // ส่งข้อมูลทันที
 }
 /*
 add input if no com???

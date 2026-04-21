@@ -1,229 +1,254 @@
 <?php
 // Supabase.php
-function init_env($path) {
+
+// --- Private Helpers ---
+
+function init_env(string $path): void {
     if (!file_exists($path)) return;
-    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue; // ข้ามคอมเมนต์
-        if (strpos($line, '=') !== false) {
-            list($name, $value) = explode('=', $line, 2);
+    foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        if (str_starts_with(trim($line), '#')) continue;
+        if (str_contains($line, '=')) {
+            [$name, $value] = explode('=', $line, 2);
             $_ENV[trim($name)] = trim($value);
         }
     }
 }
 
-function supabase_query($path, $method = "GET", $postData = null, &$httpCode = null) {
+function get_supabase_config(): array {
     init_env(__DIR__ . '/.env');
+    return [
+        'url' => $_ENV['SUPABASE_URL'] ?? '',
+        'key' => $_ENV['SUPABASE_KEY'] ?? '',
+    ];
+}
 
-    $supabase_url =  $_ENV['SUPABASE_URL'] ?? '';
-    $supabase_key = $_ENV['SUPABASE_KEY'] ?? '';
+function make_auth_headers(string $key, array $extra = []): array {
+    return array_merge([
+        "apikey: $key",
+        "Authorization: Bearer $key",
+    ], $extra);
+}
 
-    $ch = curl_init($supabase_url . $path);
+function curl_exec_with_code(string $url, array $options = []): array {
+    $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "apikey: " . $supabase_key,
-        "Authorization: Bearer " . $supabase_key,
-        "Content-Type: application/json"
-    ]);
+    foreach ($options as $opt => $val) {
+        curl_setopt($ch, $opt, $val);
+    }
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    return [$response, $httpCode];
+}
+
+// --- Public Functions ---
+
+function supabase_query(string $path, string $method = "GET", ?array $postData = null, ?int &$httpCode = null): array {
+    ['url' => $url, 'key' => $key] = get_supabase_config();
+
+    $options = [
+        CURLOPT_HTTPHEADER => make_auth_headers($key, ["Content-Type: application/json"]),
+    ];
 
     if ($method === "POST") {
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-    }
-    elseif ($method === "PATCH") {
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PATCH");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+        $options[CURLOPT_POST] = true;
+        $options[CURLOPT_POSTFIELDS] = json_encode($postData);
+    } elseif ($method === "PATCH") {
+        $options[CURLOPT_CUSTOMREQUEST] = "PATCH";
+        $options[CURLOPT_POSTFIELDS] = json_encode($postData);
     }
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE); 
-    // PHP 8.5 handles curl_close automatically
+    [$response, $httpCode] = curl_exec_with_code($url . $path, $options);
     return json_decode($response, true) ?? [];
-    
 }
 
-function uploadSignature($user_id, $file) {
-    init_env(__DIR__ . '/.env');
-    $supabase_url =  $_ENV['SUPABASE_URL'] ?? '';
-    $supabase_key = $_ENV['SUPABASE_KEY'] ?? '';
-    $bucketName  = 'Signature';
+function uploadSignature(string $user_id, array $file): array {
+    ['url' => $url, 'key' => $key] = get_supabase_config();
+    $bucket = 'Signature';
 
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $fileName  = $user_id . "_signature." . $extension;
-    $fileData  = file_get_contents($file['tmp_name']);
+    $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $fileName = "{$user_id}_signature.{$ext}";
 
-    $ch = curl_init("$supabase_url/storage/v1/object/$bucketName/$fileName");
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Authorization: Bearer $supabase_key",
-        "apikey: $supabase_key",
-        "Content-Type: " . mime_content_type($file['tmp_name']),
-        "x-upsert: true"
+    [, $httpCode] = curl_exec_with_code("$url/storage/v1/object/$bucket/$fileName", [
+        CURLOPT_CUSTOMREQUEST => "POST",
+        CURLOPT_POSTFIELDS    => file_get_contents($file['tmp_name']),
+        CURLOPT_HTTPHEADER    => make_auth_headers($key, [
+            "Content-Type: " . mime_content_type($file['tmp_name']),
+            "x-upsert: true",
+        ]),
     ]);
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-    if ($httpCode >= 200 && $httpCode < 300) {
-        return [
-            "success" => true, 
-            "url" => "$supabase_url/storage/v1/object/public/$bucketName/$fileName"
-        ];
-    } else {
-        return [
-            "success" => false, 
-            "status" => $httpCode
-        ];
-    }
+    return $httpCode >= 200 && $httpCode < 300
+        ? ["success" => true,  "url" => "$url/storage/v1/object/public/$bucket/$fileName"]
+        : ["success" => false, "status" => $httpCode];
 }
 
-function updateSignatureWhenChangeUserID($old_user_id, $new_user_id) { 
-    init_env(__DIR__ . '/.env');
-    $supabase_url = $_ENV['SUPABASE_URL'] ?? '';
-    $supabase_key = $_ENV['SUPABASE_KEY'] ?? '';
-    $bucketName  = 'Signature';
+function updateSignatureWhenChangeUserID(string $old_user_id, string $new_user_id): array {
+    ['url' => $url, 'key' => $key] = get_supabase_config();
+    $bucket = 'Signature';
 
-    $extensions = ['png', 'jpg', 'jpeg', 'webp'];
-    $success = false;
-    $copy_code = 0;
-    $delete_code = 0;
-    $newFileName = '';
+    foreach (['png', 'jpg', 'jpeg', 'webp'] as $ext) {
+        $oldFile = "{$old_user_id}_signature.{$ext}";
+        $newFile = "{$new_user_id}_signature.{$ext}";
 
-    foreach ($extensions as $ext) {
-        $oldFileName = $old_user_id . "_signature." . $ext;
-        $newFileName = $new_user_id . "_signature." . $ext;
-
-        // 1. Copy
-        $copy_url = "{$supabase_url}/storage/v1/object/copy";
-        $copy_data = [
-            "bucketId" => $bucketName,
-            "sourceKey" => $oldFileName,
-            "destinationKey" => $newFileName
-        ];
-
-        $ch = curl_init($copy_url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($copy_data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            "Authorization: Bearer $supabase_key",
-            "apikey: $supabase_key",
-            "Content-Type: application/json"
+        [, $copyCode] = curl_exec_with_code("$url/storage/v1/object/copy", [
+            CURLOPT_POST       => true,
+            CURLOPT_POSTFIELDS => json_encode(["bucketId" => $bucket, "sourceKey" => $oldFile, "destinationKey" => $newFile]),
+            CURLOPT_HTTPHEADER => make_auth_headers($key, ["Content-Type: application/json"]),
         ]);
-        $copy_response = curl_exec($ch);
-        $copy_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-        if ($copy_code >= 200 && $copy_code < 300) {
-            // 2. Delete ไฟล์เก่า
-            $delete_url = "{$supabase_url}/storage/v1/object/{$bucketName}/{$oldFileName}";
-            $ch = curl_init($delete_url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                "Authorization: Bearer $supabase_key",
-                "apikey: $supabase_key"
+        if ($copyCode >= 200 && $copyCode < 300) {
+            [, $deleteCode] = curl_exec_with_code("$url/storage/v1/object/$bucket/$oldFile", [
+                CURLOPT_CUSTOMREQUEST => "DELETE",
+                CURLOPT_HTTPHEADER    => make_auth_headers($key),
             ]);
-            $delete_response = curl_exec($ch);
-            $delete_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-            $success = true;
-            break; // เจอแล้วก็หยุด ไม่ต้องวนต่อ
+            return [
+                "success"       => true,
+                "new"           => $newFile,
+                "url"           => "$url/storage/v1/object/public/$bucket/$newFile",
+                "copy_status"   => $copyCode,
+                "delete_status" => $deleteCode,
+            ];
         }
     }
 
-    if ($success) {
-        return [
-            "success" => true,
-            "new" => $newFileName,
-            "url" => "{$supabase_url}/storage/v1/object/public/{$bucketName}/{$newFileName}",
-            "copy_status" => $copy_code,
-            "delete_status" => $delete_code
-        ];
-    }
-
-    return [
-        "success" => false,
-        "status" => $copy_code,
-        "error_msg" => "ไม่พบไฟล์ต้นทางในระบบ"
-    ];
+    return ["success" => false, "error_msg" => "ไม่พบไฟล์ต้นทางในระบบ"];
 }
 
-function deleteSignatureByUserId($user_id) {
-    init_env(__DIR__ . '/.env');
-    $supabase_url = $_ENV['SUPABASE_URL'] ?? '';
-    $supabase_key = $_ENV['SUPABASE_KEY'] ?? '';
-    $bucketName  = 'Signature';
+function deleteSignatureByUserId(string $user_id): array {
+    ['url' => $url, 'key' => $key] = get_supabase_config();
+    $bucket = 'Signature';
 
-    $extensions = ['png', 'jpg', 'jpeg', 'webp'];
-
-    $success = false;
-    $lastHttpCode = 0;
-    
-    foreach ($extensions as $ext) {
-        $fileName = $user_id . "_signature." . $ext;
-        $ch = curl_init("$supabase_url/storage/v1/object/$bucketName/$fileName");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            "Authorization: Bearer $supabase_key",
-            "apikey: $supabase_key"
+    foreach (['png', 'jpg', 'jpeg', 'webp'] as $ext) {
+        [, $httpCode] = curl_exec_with_code("$url/storage/v1/object/$bucket/{$user_id}_signature.{$ext}", [
+            CURLOPT_CUSTOMREQUEST => "DELETE",
+            CURLOPT_HTTPHEADER    => make_auth_headers($key),
         ]);
-        $response =curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $lastHttpCode = $httpCode;
 
         if ($httpCode >= 200 && $httpCode < 300) {
-            $success = true;
-            break; // *** เจอไฟล์และลบสำเร็จแล้ว ให้หยุดวนลูปทันที ***
+            return ["success" => true, "status" => $httpCode];
         }
     }
-    return [
-        "success" => $success, 
-        "status"  => $lastHttpCode
-    ];
+
+    return ["success" => false, "status" => $httpCode ?? 0];
 }
 
-function uploadImageToForm($form_id, $file, $custom_filename) {
-    init_env(__DIR__ . '/.env');
-    $supabase_url = $_ENV['SUPABASE_URL'] ?? '';
-    $supabase_key = $_ENV['SUPABASE_KEY'] ?? '';
+function uploadImageToForm(string $form_id, array $file, string $custom_filename): array {
+    ['url' => $url, 'key' => $key] = get_supabase_config();
+    $bucket   = 'Form';
     
-    $bucketName = 'Form'; 
 
-    // ดึงนามสกุลไฟล์เดิมมาใช้
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-   
-     // ตั้งโครงสร้าง Path: {form_id}/{custom_filename}.{extension}
-    $fullPath = "$form_id/$custom_filename.$extension";
-
-    $fileData = file_get_contents($file['tmp_name']);
-
-    $ch = curl_init("$supabase_url/storage/v1/object/$bucketName/$fullPath");
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Authorization: Bearer $supabase_key",
-        "apikey: $supabase_key",
-        "Content-Type: " . mime_content_type($file['tmp_name']),
-        "x-upsert: true" // ถ้าชื่อไฟล์ซ้ำ จะทำการเขียนทับให้ทันที
+     // 1. ค้นหาไฟล์เดิมที่อาจมีนามสกุลต่างกัน (เช่น .jpg, .png) แล้วลบทิ้งก่อน
+    $list_url = "$url/storage/v1/object/list/$bucket";
+    [$listResponse, ] = curl_exec_with_code($list_url, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode(["prefix" => "$form_id/"]),
+        CURLOPT_HTTPHEADER => make_auth_headers($key, ["Content-Type: application/json"])
     ]);
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $files = json_decode($listResponse, true) ?: [];
+    foreach ($files as $f) {
+        if (str_starts_with($f['name'], $custom_filename)) {
+            curl_exec_with_code("$url/storage/v1/object/$bucket/$form_id/{$f['name']}", [
+                CURLOPT_CUSTOMREQUEST => "DELETE",
+                CURLOPT_HTTPHEADER    => make_auth_headers($key)
+            ]);
+        }
+    }
 
-    if ($httpCode >= 200 && $httpCode < 300) {
-        return [
-            "success" => true, 
-            "url" => "$supabase_url/storage/v1/object/public/$bucketName/$fullPath"
-        ];
-    } else {
-        return [
-            "success" => false, 
-            "status" => $httpCode,
-            "error" => $response
-        ];
+     // 2. เตรียมไฟล์ใหม่ที่จะอัปโหลด
+    $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $fullPath = "$form_id/$custom_filename.$ext";
+
+    [, $httpCode] = curl_exec_with_code("$url/storage/v1/object/$bucket/$fullPath", [
+        CURLOPT_CUSTOMREQUEST => "POST",
+        CURLOPT_POSTFIELDS    => file_get_contents($file['tmp_name']),
+        CURLOPT_HTTPHEADER    => make_auth_headers($key, [
+            "Content-Type: " . mime_content_type($file['tmp_name']),
+            "x-upsert: true",
+            "cache-control: no-cache"
+        ]),
+    ]);
+
+    return $httpCode >= 200 && $httpCode < 300
+        ? ["success" => true,  "url" => "$url/storage/v1/object/public/$bucket/$fullPath"]
+        : ["success" => false, "status" => $httpCode];
+}
+
+function getImageFromUrlAndUploadToForm(string $form_id, string $image_url, string $custom_filename): array {
+    ['url' => $url, 'key' => $key] = get_supabase_config();
+    $bucket = 'Form';
+
+    $list_url = "$url/storage/v1/object/list/$bucket";
+    [$listResponse, ] = curl_exec_with_code($list_url, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode(["prefix" => "$form_id/"]),
+        CURLOPT_HTTPHEADER => make_auth_headers($key, ["Content-Type: application/json"])
+    ]);
+
+    $files = json_decode($listResponse, true) ?: [];
+    foreach ($files as $f) {
+        if (str_starts_with($f['name'], $custom_filename)) {
+            curl_exec_with_code("$url/storage/v1/object/$bucket/$form_id/{$f['name']}", [
+                CURLOPT_CUSTOMREQUEST => "DELETE",
+                CURLOPT_HTTPHEADER    => make_auth_headers($key)
+            ]);
+        }
+    }
+
+    // ดึงไฟล์จาก URL
+    [$fileData, $httpCode] = curl_exec_with_code($image_url);
+    if ($httpCode < 200 || $httpCode >= 300 || empty($fileData)) {
+        return ["success" => false, "error_msg" => "ดึงไฟล์จาก URL ไม่สำเร็จ", "status" => $httpCode];
+    }
+
+    // เดา extension จาก Content-Type
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mimeType = $finfo->buffer($fileData);
+    $ext = match($mimeType) {
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+        'image/gif'  => 'gif',
+        default      => 'bin'
+    };
+
+    $fullPath = "$form_id/$custom_filename.$ext";
+
+    [, $uploadCode] = curl_exec_with_code("$url/storage/v1/object/$bucket/$fullPath", [
+        CURLOPT_CUSTOMREQUEST => "POST",
+        CURLOPT_POSTFIELDS    => $fileData,
+        CURLOPT_HTTPHEADER    => make_auth_headers($key, [
+            "Content-Type: $mimeType",
+            "x-upsert: true",
+            "cache-control: no-cache"
+        ]),
+    ]);
+
+    return $uploadCode >= 200 && $uploadCode < 300
+        ? ["success" => true,  "url" => "$url/storage/v1/object/public/$bucket/$fullPath"]
+        : ["success" => false, "status" => $uploadCode, "error_msg" => "อัปโหลดไฟล์ไปยัง Supabase ไม่สำเร็จ"];
+}
+
+function deleteFilesByPrefix(string $form_id, string $custom_filename): void {
+    ['url' => $url, 'key' => $key] = get_supabase_config();
+    $bucket = 'Form';
+
+    // 1. ดึงรายชื่อไฟล์ในโฟลเดอร์ form_id
+    $list_url = "$url/storage/v1/object/list/$bucket";
+    [$listRes, ] = curl_exec_with_code($list_url, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode(["prefix" => "$form_id/"]),
+        CURLOPT_HTTPHEADER => make_auth_headers($key, ["Content-Type: application/json"])
+    ]);
+    
+    $files = json_decode($listRes, true) ?: [];
+    foreach ($files as $f) {
+        if (str_starts_with($f['name'], $custom_filename)) {
+            curl_exec_with_code("$url/storage/v1/object/$bucket/$form_id/{$f['name']}", [
+                CURLOPT_CUSTOMREQUEST => "DELETE",
+                CURLOPT_HTTPHEADER    => make_auth_headers($key)
+            ]);
+        }
     }
 }

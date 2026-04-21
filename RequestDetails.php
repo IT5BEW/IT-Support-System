@@ -132,8 +132,11 @@ function getStepClass($stepNumber, $currentStatus) {
                                     </p>
                                     <p style="margin: 0;"><b style="font-weight: bold;">ภาพประกอบ:</b></p>
                                     <div style="width: 100%;">
-                                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQr_g65NtQWD7p3Ymgl6xfa6vh6bP6AD4LYqw&s" 
-                                        alt="placeholder" style="object-fit: contain; width: 100%; height: 100%;">
+                                        <?php if (!empty($detailReport['DetailedImage'])): ?>
+                                            <img src="<?php echo $detailReport['DetailedImage'] ?? ''; ?>" alt="placeholder" style="object-fit: contain; width: 100%; height: 100%;">
+                                        <?php else: ?>
+                                            <p style="margin: 0 0 10px;">ไม่มีภาพประกอบ</p>
+                                        <?php endif ?>
                                     </div>
                                 </div>
                             </div>

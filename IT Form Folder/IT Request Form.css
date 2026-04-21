@@ -204,12 +204,30 @@ input[type="radio"]:checked::before {
 #downloadButton i, #downloadButton p {color: white;}
 #downloadButton:hover{border: 1px solid var(--darkblue); background-color: var(--darkblue);} */
 
-#output-image{
+.previewImage{
     max-height: 600px;
     max-width: 100%;
     display: block;
     margin: 10px auto 0px;
 }
+
+#removeImageButton{
+    display: flex;
+    color: white;
+    cursor: pointer;
+    border-radius: 10px;
+    justify-content: center;
+    line-height: 20px;
+    gap: 10px;
+    padding: 10px;
+    margin-top: 10px;
+    border: 1px solid var(--red);
+    background-color: var(--red);
+}
+#removeImageButton i {font-size: large; align-self: center;}
+#removeImageButton p {font-size: 18px; margin: 0;}
+
+#removeImageButton:hover {border: 1px solid var(--darkred);background-color: var(--darkred);}
 
 .required{border: 1px solid var(--borderRed); background: var(--inputBGRed);}
 .requiredText{font-size: 16px; color: red; margin: 10px 0 0;}
@@ -232,13 +250,13 @@ input[type="radio"]:checked::before {
     .FormFooterContainer{flex-direction: column;}
     .FormConfirmLeftItem{width: 100%;}
     .FormConfirmRightItem{width: 100%; flex-direction: column;}
-    .FormConfirmButton{width: 100%; margin: 0; height: auto;  flex-direction: row; margin: 10px auto 0px;}
-    .FormConfirmIcon{font-size: 20px;}
-    .FormConfirmLabel{font-size: 16px;}
+    .FormConfirmButton{width: 100%; margin: 0; height: auto;  flex-direction: row; margin: 10px auto 0px; padding: 5px;}
+    .FormConfirmIcon{font-size: large;}
+    .FormConfirmLabel{font-size: 18px;}
     .requiredText{font-size: 14px;}
     #causeTextFirstLineBoxLeft{width: 100%;} 
     #causeTextFirstLineBoxRight{width: 100%;}
-    #output-image{max-height: 400px;}
+    .previewImage{max-height: 400px;}
 }
 
 @media screen and (max-width: 700px){

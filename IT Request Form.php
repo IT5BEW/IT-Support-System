@@ -35,20 +35,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $cause2    = $_POST['cause2'] ?? '';
         $cause3    = $_POST['cause3'] ?? ''; // รับมาเพื่อเช็ค mismatch
         $signature = $_POST['signature'] ?? '';
+        $detailImage = $_FILES['detailImage'] ?? null;
 
-        if ($fixcom || $fixetc) {$error_check1 = true;}
-        
-        if ($reinstall || $broken || $etc) {$error_check2 = true;} 
-        else if($etc && empty(trim($etctext))){$error_check2 = true;}
-        
-        if (empty(trim($signature))) {$error_check3 = true;} 
 
-        if ($file['size'] > 50*(1024*1024)) {
-            $error_filesize = true;
-            $_SESSION['flash_message'] = "ขนาดของภาพใหญ่เกินไป ขนาดต้องไม่เกิน 50MB";
-        } 
+        $error_check1 = (!$fixcom && !$fixetc) ? true : false;
+        $error_check2   = (!$reinstall && !$broken && !$etc) ? true : false;
+        if ($etc && empty(trim($etctext))) { $error_check2 = true; }
+        $error_check3   = (empty(trim($signature))) ? true : false;
+
+        if ($detailImage && $detailImage['error'] !== UPLOAD_ERR_NO_FILE) {
+            if ($detailImage['error'] !== UPLOAD_ERR_OK) {
+                $error_filesize = true;
+                $_SESSION['flash_message'] = "ไฟล์มีปัญหา กรุณาลองอัปโหลดใหม่";
+            } 
+            elseif ($detailImage['size'] > 50 * 1024 * 1024) {
+                $error_filesize = true;
+                $_SESSION['flash_message'] = "ขนาดของภาพใหญ่เกินไป ขนาดต้องไม่เกิน 50MB";
+            }
+        }
         
-        if (!$error_check1 || !$error_check2 || !$error_check3 || !$error_filesize) {
+        if (!$error_check1 && !$error_check2 && !$error_check3 && !$error_filesize) {
             date_default_timezone_set('Asia/Bangkok');
             $date = new DateTime('now');
             $date_formatted = $date->format('YmdHis');
@@ -58,13 +64,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if(!$etc){$etctext = '';}
 
+            if ($detailImage && $detailImage['error'] !== UPLOAD_ERR_NO_FILE) {
+                $uploadedDetailImage = uploadImageToForm($form_id, $detailImage, "DetailImage");
+                if ($uploadedDetailImage['success']) {
+                    $detailImageInput = $uploadedDetailImage['url'];
+                } 
+                else {
+                    $status = $uploadedDetailImage['status'];
+                    $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัปโหลดประกอบ (Status: $status)";
+                    header("Location: " . $_SERVER['PHP_SELF']);
+                    exit;
+                }
+            }
+            else {$detailImageInput = null; }
+
             if($signature == 'useSignature'){
                 $usesignature = true;
-                $signatureInput = $user['Signature'];
+                $signatureUpload = getImageFromUrlAndUploadToForm($form_id, $user['Signature'], "User_Signature");
+                if ($signatureUpload['success']) {
+                    $signatureInput = $signatureUpload['url'];
+                } 
+                else {
+                    $status = $signatureUpload['status'];
+                    $_SESSION['flash_message'] = $signatureUpload['error_mgs'] . " (Status: $status)";
+                    header("Location: " . $_SERVER['PHP_SELF']);
+                    exit;
+                }
             }
             else{
                 $usesignature = false;
-                $signatureInput = null;
             }
 
             $data = [
@@ -84,7 +112,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "CauseText2"   => $cause2,
                 "CauseText3"   => $cause3,
                 "UseSignature" => $usesignature,
-                "Signature"    => $signatureInput 
+                "Signature"    => $signatureInput,
+                "DetailedImage"  => $detailImageInput
             ];
 
             $status = 0;
@@ -100,6 +129,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (isset($_POST['edit_form'])) {
         $get_form_id = $_POST['form_id_to_save'] ?? '';
+
+        $status_check = 0;
+        $existingData = supabase_query("/rest/v1/RequestForm?Form_ID=eq." . urlencode($get_form_id), "GET", null, $status_check);
+        $editReport = (!empty($existingData)) ? $existingData[0] : null;
+
         $fixcom    = isset($_POST['FixCom']) ? true : false;
         $fixetc    = isset($_POST['FixETC']) ? true : false;
         $reinstall = isset($_POST['ReInstall']) ? true : false;
@@ -109,30 +143,71 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $cause1    = $_POST['cause1'] ?? '';
         $cause2    = $_POST['cause2'] ?? '';
         $cause3    = $_POST['cause3'] ?? ''; // รับมาเพื่อเช็ค mismatch
-        $signature = $_POST['signature'] ?? '';
+        $signature = $_POST['signature'] ?? 'ทดสอบ';
+        $detailImage = $_FILES['detailImage'] ?? null;
 
-        if ($fixcom || $fixetc) {$error_check1 = true;}
+        $error_check1 = (!$fixcom && !$fixetc) ? true : false;
+        $error_check2   = (!$reinstall && !$broken && !$etc) ? true : false;
+        if ($etc && empty(trim($etctext))) { $error_check2 = true; }
+        $error_check3   = (empty(trim($signature))) ? true : false;
+
+        if ($detailImage && $detailImage['error'] !== UPLOAD_ERR_NO_FILE) {
+            if ($detailImage['error'] !== UPLOAD_ERR_OK) {
+                $error_filesize = true;
+                $_SESSION['flash_message'] = "ไฟล์มีปัญหา กรุณาลองอัปโหลดใหม่";
+            } 
+            elseif ($detailImage['size'] > 50 * 1024 * 1024) {
+                $error_filesize = true;
+                $_SESSION['flash_message'] = "ขนาดของภาพใหญ่เกินไป ขนาดต้องไม่เกิน 50MB";
+            }
+        }
         
-        if ($reinstall || $broken || $etc) {$error_check2 = true;} 
-        else if($etc && empty(trim($etctext))){$error_check2 = true;}
-        
-        if (empty(trim($signature))) {$error_check3 = true;} 
-        
-        if ((!$error_check1 || !$error_check2 || !$error_check3) && !empty(trim($get_form_id))) {
+        if (!$error_check1 && !$error_check2 && !$error_check3 && !$error_filesize && !empty(trim($get_form_id))) {
             date_default_timezone_set('Asia/Bangkok');
             $date = new DateTime('now');
             $date_formatted = $date->format('YmdHis');
             $date_ymd = $date->format('Y-m-d');
 
-            $form_id = $user['User_ID'] . "_" . $date_formatted;
+            $form_id = $get_form_id;
 
             if(!$etc){$etctext = '';}
 
-            if($signature == 'useSignature'){
-                $usesignature = true;
-                $signatureInput = $user['Signature'];
+            if ($detailImage && $detailImage['error'] !== UPLOAD_ERR_NO_FILE) {
+                $uploadedDetailImage = uploadImageToForm($form_id, $detailImage, "DetailImage");
+                if ($uploadedDetailImage['success']) {
+                    $detailImageInput = $uploadedDetailImage['url'];
+                } 
+                else {
+                    $status = $uploadedDetailImage['status'];
+                    $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัปโหลดประกอบ (Status: $status)";
+                    header("Location: " . $_SERVER['PHP_SELF'] . "?form_id=" . urlencode($get_form_id));
+                    exit;
+                }
             }
-            else{
+            else {$detailImageInput = $editReport['DetailedImage'] ?? null;}
+
+            $usesignature = $editReport['UseSignature'] ?? false;
+            $signatureInput = $editReport['Signature'] ?? null;
+
+            if ($signature == 'useSignature') {
+                if (!empty($user['Signature'])) {
+                    $signatureUpload = getImageFromUrlAndUploadToForm($form_id, $user['Signature'], "User_Signature");
+                    if ($signatureUpload['success']) {
+                        $usesignature = true;
+                        $signatureInput = $signatureUpload['url'];
+                    } 
+                    else {
+                        $status = $signatureUpload['status'];
+                        $_SESSION['flash_message'] = $signatureUpload['error_mgs'] . " (Status: $status)";
+                        header("Location: " . $_SERVER['PHP_SELF']);
+                        exit;
+                    }
+                } 
+                elseif (!empty($editReport['Signature'])) {
+                    $usesignature = true;
+                }
+            } 
+            else {
                 $usesignature = false;
                 $signatureInput = null;
             }
@@ -152,7 +227,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "CauseText2"   => $cause2,
                 "CauseText3"   => $cause3,
                 "UseSignature" => $usesignature,
-                "Signature"    => $signatureInput 
+                "Signature"    => $signatureInput,
+                "DetailedImage"  => $detailImageInput
             ];
 
             $status = 0;
@@ -166,6 +242,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         header("Location: " . $_SERVER['PHP_SELF'] . "?form_id=" . urlencode($get_form_id));
+        exit;
+    }
+
+    if (isset($_POST['delete_image'])) {
+        // ลองหาจาก POST ก่อน ถ้าไม่มีให้เอาจาก GET (ที่มากับ URL formaction)
+        $form_id = $_POST['form_id_to_save'] ?? $_GET['form_id'] ?? '';
+
+        $_SESSION['flash_message'] = $form_id;
+        if (!empty($form_id)) {
+            // ลบไฟล์ใน Storage
+            deleteFilesByPrefix($form_id, "DetailImage");
+            
+            $status = 0;
+            supabase_query("/rest/v1/RequestForm?Form_ID=eq." . urlencode($form_id), "PATCH", ["DetailedImage" => null], $status);
+
+            if ($status >= 200 && $status < 300) {
+                $_SESSION['flash_message'] = "ลบรูปภาพประกอบสำเร็จ";
+            } 
+            else {
+                $_SESSION['flash_message'] = "ลบจากฐานข้อมูลไม่สำเร็จ (Status: $status)";
+            }
+        } 
+        else {
+            $_SESSION['flash_message'] = "ไม่พบรหัสฟอร์มที่จะลบ";
+        }
+
+        header("Location: " . $_SERVER['PHP_SELF'] . "?form_id=" . urlencode($form_id));
         exit;
     }
 }
@@ -222,28 +325,28 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                 <div class="formItemContainer">
                     <h1 style="font-weight: bold; margin-top: 0; text-align: center;">ใบขอแจ้งซ่อม/ติดตั้งระบบสารสนเทศใหม่</h1> 
                     <hr style="margin:25px 0; border: 1px solid #e2e8f0">
-                    <form action="" id="mainForm" method="POST">
+                    <form action="" id="mainForm" method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="form_id_to_save" value="<?php echo $get_form_id; ?>">
                         <div id="DescriptionBox">
                             <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดของผู้ใช้งาน</b></p>
                             <div class="DescriptionRow">
                                 <div class="DescriptionCollumn">      
                                     <div class="DescriptionLabel"><i class="fa-solid fa-computer DescriptionIcon"></i>Equipment ID:</div>
-                                    <div class="DescriptionInput" id="EquipmentID"><?php echo htmlspecialchars($editReport['Equipment_ID'] ?? $user['Equipment_ID'] ?? 'ไม่มีคอมพิวเตอร์'); ?></div>
+                                    <div class="DescriptionInput" id="EquipmentID"><?php echo htmlspecialchars($user['Equipment_ID'] ?? $editReport['Equipment_ID']  ?? 'ไม่มีคอมพิวเตอร์'); ?></div>
                                 </div>
                                 <div class="DescriptionCollumn">
                                     <div class="DescriptionLabel"><i class="fa-solid fa-circle-user DescriptionIcon"></i>User:</div>
-                                    <div class="DescriptionInput" id="User"><?php echo htmlspecialchars($editUser['Firstname'] ?? $user['Firstname'] ?? 'ไม่มีชื่อผู้ใช้'); ?></div>
+                                    <div class="DescriptionInput" id="User"><?php echo htmlspecialchars($user['Firstname'] ?? $editUser['Firstname'] ?? 'ไม่มีชื่อผู้ใช้'); ?></div>
                                 </div>
                             </div>
                             <div class="DescriptionRow">
                                 <div class="DescriptionCollumn">
                                     <div class="DescriptionLabel"><i class="fa-solid fa-laptop-file DescriptionIcon"></i>Com. Name:</div>
-                                    <div class="DescriptionInput" id="ComName"><?php echo htmlspecialchars($editComp['ComName'] ?? $mycomputer['ComName'] ?? 'ไม่มีชื่อคอม'); ?></div>
+                                    <div class="DescriptionInput" id="ComName"><?php echo htmlspecialchars($mycomputer['ComName'] ?? $editComp['ComName'] ?? 'ไม่มีชื่อคอม'); ?></div>
                                 </div>
                                 <div class="DescriptionCollumn">
                                     <div class="DescriptionLabel"><i class="fa-solid fa-building-user DescriptionIcon"></i>Section:</div>
-                                    <div class="DescriptionInput" id="Section"><?php echo htmlspecialchars($editUser['Section'] ?? $user['Section'] ?? 'ไม่มีแผนก'); ?></div>
+                                    <div class="DescriptionInput" id="Section"><?php echo htmlspecialchars($user['Section'] ?? $editUser['Section'] ?? 'ไม่มีแผนก'); ?></div>
                                 </div>
                             </div>
                         </div>
@@ -296,8 +399,16 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                         <hr style="margin:25px 0; border: 1px solid #e2e8f0">
 
                         <p style="margin: 0;"><b style="font-weight: bold;">รูปภาพประกอบ :</b></p>
+                        <?php if (!empty($editReport['DetailedImage'])): ?>
+                            <img src="<?= $editReport['DetailedImage'] . '?t=' . time() ?>" class="previewImage" onerror="this.style.display='none';">
+                            <button type="button" id="removeImageButton" onclick="execDeleteImage('<?= $get_form_id ?>')">
+                                <i class="fa-solid fa-trash-can"></i>
+                                <p class="buttonLabel">นำรูปภาพออก</p>
+                            </button>
+                            <br><p style="margin: 0;"><b style="font-weight: bold;">เปลี่ยนรูปภาพใหม่: </b></p>
+                        <?php endif ?>
                         <input type="file" id="detailImage" name="detailImage" style="width: 100%; height: auto; margin-top: 5px;" accept="image/*" onchange="previewImage(event)">
-                        <img id="output-image">
+                        <img id="output-image" class="previewImage">
 
                         <hr style="margin:25px 0; border: 1px solid #e2e8f0">
 
@@ -313,7 +424,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                                 <input type="radio" id="useSignature" name="signature" value="useSignature" <?php echo (!$hasSig) ? 'disabled' : ''; ?> <?php echo ($hasSig) ? 'checked' : ''; ?> >
                                 <label for="useSignature" id="useSignatureLabel">ใช้ลายเซ็นในการเซ็นเอกสาร:
                                 <?php if ($hasSig): ?>
-                                    <img src="<?= !empty($editReport['Signature']) ? $editReport['Signature'] : $user['Signature'] ?>" style="max-height: 80px;">
+                                    <img src="<?= !empty($user['Signature']) ? $user['Signature'] : $editReport['Signature'] ?>" style="max-height: 80px;">
                                 <?php endif ?>
                                  </label>
                                 <p class="requiredText" id="check3" <?= $error_check3 ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> กรุณากรอกฟอร์มที่กำหนดให้ครบทุกช่อง</p>
