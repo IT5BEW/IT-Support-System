@@ -78,6 +78,7 @@ function uploadSignature($user_id, $file) {
         ];
     }
 }
+
 function updateSignatureWhenChangeUserID($old_user_id, $new_user_id) { 
     init_env(__DIR__ . '/.env');
     $supabase_url = $_ENV['SUPABASE_URL'] ?? '';
@@ -182,4 +183,47 @@ function deleteSignatureByUserId($user_id) {
         "success" => $success, 
         "status"  => $lastHttpCode
     ];
+}
+
+function uploadImageToForm($form_id, $file, $custom_filename) {
+    init_env(__DIR__ . '/.env');
+    $supabase_url = $_ENV['SUPABASE_URL'] ?? '';
+    $supabase_key = $_ENV['SUPABASE_KEY'] ?? '';
+    
+    $bucketName = 'Form'; 
+
+    // ดึงนามสกุลไฟล์เดิมมาใช้
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+   
+     // ตั้งโครงสร้าง Path: {form_id}/{custom_filename}.{extension}
+    $fullPath = "$form_id/$custom_filename.$extension";
+
+    $fileData = file_get_contents($file['tmp_name']);
+
+    $ch = curl_init("$supabase_url/storage/v1/object/$bucketName/$fullPath");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $fileData);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Authorization: Bearer $supabase_key",
+        "apikey: $supabase_key",
+        "Content-Type: " . mime_content_type($file['tmp_name']),
+        "x-upsert: true" // ถ้าชื่อไฟล์ซ้ำ จะทำการเขียนทับให้ทันที
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    if ($httpCode >= 200 && $httpCode < 300) {
+        return [
+            "success" => true, 
+            "url" => "$supabase_url/storage/v1/object/public/$bucketName/$fullPath"
+        ];
+    } else {
+        return [
+            "success" => false, 
+            "status" => $httpCode,
+            "error" => $response
+        ];
+    }
 }

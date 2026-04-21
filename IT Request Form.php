@@ -21,6 +21,7 @@ $mycomputer = reset($mycomputer) ?: null;
 $error_check1 = false;
 $error_check2 = false;
 $error_check3 = false;
+$error_filesize = false;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") { 
     if (isset($_POST['create_form'])) {
@@ -41,8 +42,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         else if($etc && empty(trim($etctext))){$error_check2 = true;}
         
         if (empty(trim($signature))) {$error_check3 = true;} 
+
+        if ($file['size'] > 50*(1024*1024)) {
+            $error_filesize = true;
+            $_SESSION['flash_message'] = "ขนาดของภาพใหญ่เกินไป ขนาดต้องไม่เกิน 50MB";
+        } 
         
-        if (!$error_check1 || !$error_check2 || !$error_check3) {
+        if (!$error_check1 || !$error_check2 || !$error_check3 || !$error_filesize) {
             date_default_timezone_set('Asia/Bangkok');
             $date = new DateTime('now');
             $date_formatted = $date->format('YmdHis');
@@ -302,9 +308,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                                     $useSig = $editReport['UseSignature'] ?? false;
                                     $hasSig = !empty($editReport['Signature']) || !empty($user['Signature']);
                                 ?>
-                                <input type="radio" id="useName" name="signature" value="useName" checked <?php if (!$useSig || ($useSig && !$hasSig)) echo 'checked'; ?>>
+                                <input type="radio" id="useName" name="signature" value="useName" <?php if (!$useSig || !$hasSig) echo 'checked'; ?>>
                                 <label for="useName">ใช้ชื่อจริงในการเซ็นเอกสาร: <?php echo htmlspecialchars($editUser['Firstname'] ?? $user['Firstname'] ?? 'ไม่มีชื่อผู้ใช้'); ?></label><br>
-                                <input type="radio" id="useSignature" name="signature" value="useSignature" <?php echo (!$hasSig) ? 'disabled' : ''; ?> <?php echo ($useSig && $hasSig) ? 'checked' : ''; ?> >
+                                <input type="radio" id="useSignature" name="signature" value="useSignature" <?php echo (!$hasSig) ? 'disabled' : ''; ?> <?php echo ($hasSig) ? 'checked' : ''; ?> >
                                 <label for="useSignature" id="useSignatureLabel">ใช้ลายเซ็นในการเซ็นเอกสาร:
                                 <?php if ($hasSig): ?>
                                     <img src="<?= !empty($editReport['Signature']) ? $editReport['Signature'] : $user['Signature'] ?>" style="max-height: 80px;">
@@ -320,7 +326,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                                     </button>
                                     <button type="button" value="Cancel" class="FormConfirmButton" id="cancelButton" onclick="ClearForm()">
                                         <i class="fa-solid fa-circle-xmark FormConfirmIcon"></i>
-                                        <p class="FormConfirmLabel">ยกเลิก</p>
+                                        <p class="FormConfirmLabel">ล้างข้อมูล</p>
                                     </button>
                                 <?php endif; ?>  
                                 <?php if ($get_form_id): // หรือถ้ามี ID ส่งมา (โหมดแก้ไข) คุณอาจจะโชว์ปุ่ม "อัปเดต" แทน ?>

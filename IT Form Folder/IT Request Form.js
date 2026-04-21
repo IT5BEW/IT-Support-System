@@ -34,6 +34,9 @@ function ClearForm(){
   document.getElementById("check1").hidden = true;
   document.getElementById("check2").hidden = true;
   document.getElementById("check3").hidden = true;
+  const output = document.getElementById('output-image');
+  output.src = "";
+  output.style.display = 'none';
 }
 
 function CheckForm(element){
@@ -143,8 +146,15 @@ function previewImage(event) {
 
     // ตรวจสอบว่ามีการเลือกไฟล์อย่างน้อย 1 ไฟล์หรือไม่
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
+        if(input.files[0].size > 50*(1024*1024)){
+          alert("ขนาดของภาพใหญ่เกินไป ขนาดต้องไม่เกิน 50MB");
+          input.value = "";
+          output.src = "";
+          output.style.display = 'none';
+          return;
+        };
 
+        const reader = new FileReader();
         reader.onload = function() {
             output.src = reader.result;
             output.style.display = 'block'; // แสดงรูปเมื่อโหลดเสร็จ
