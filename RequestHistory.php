@@ -1,5 +1,5 @@
 <?php
-include 'Supabase.php';
+include 'Database.php';
 session_start();
 
 // 1. เช็คความปลอดภัย: ถ้าไม่ได้ Login ให้เด้งกลับไปหน้า login.php
@@ -8,7 +8,10 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit;
 }
 $logged_user  = $_SESSION['user_id'];
-$history = supabase_query("/rest/v1/RequestForm?User_ID=eq." . urlencode($logged_user) . "&select=*&order=Date.desc");
+// lookup UID จาก User_ID ก่อน แล้วค่อย query RequestForm
+$userData = db_query('SELECT [UID] FROM [Users] WHERE [User_ID] = :id', [':id' => $logged_user]);
+$uid = !empty($userData) ? $userData[0]['UID'] : null;
+$history = $uid ? db_query('SELECT * FROM [RequestForm] WHERE [UID] = :uid ORDER BY [Date] DESC', [':uid' => $uid]) : [];
 usort($history, function($a, $b) {
     // 1. กำหนดลำดับ (Priority) ให้แต่ละ Status (เลขน้อย = อยู่บนสุด)
     $priority = [

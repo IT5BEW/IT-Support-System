@@ -1,5 +1,5 @@
 <?php
-include 'Supabase.php';
+include 'Database.php';
 session_start();
 
 // เช็คความปลอดภัย: ถ้าไม่ได้ Login ให้เด้งกลับไปหน้า login.php
@@ -10,7 +10,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 // 2. ดึงข้อมูล User
 $logged_user  = $_SESSION['user_id'];
-$data = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($logged_user) . "&select=*");
+$data = db_query('SELECT * FROM [Users] WHERE [User_ID] = :id', [':id' => $logged_user]);
 $user = (!empty($data)) ? $data[0] : null;
 
 ?>

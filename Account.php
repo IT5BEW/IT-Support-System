@@ -1,5 +1,5 @@
 <?php
-include 'Supabase.php';
+include 'Database.php';
 session_start();
 
 // เช็คความปลอดภัย: ถ้าไม่ได้ Login ให้เด้งกลับไปหน้า login.php
@@ -10,7 +10,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 // 2. ดึงข้อมูล User
 $logged_user  = $_SESSION['user_id'];
-$data = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($logged_user) . "&select=*");
+$data = db_query('SELECT * FROM [Users] WHERE [User_ID] = :id', [':id' => $logged_user]);
 $user = (!empty($data)) ? $data[0] : null;
 
 $datas = []; 
@@ -20,11 +20,11 @@ $userSigMap = [];
 $userMap = [];
 
 if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'){
-    $datas = supabase_query("/rest/v1/Users?select=*") ?? [];
+    $datas = db_query('SELECT * FROM [Users]') ?? [];
     $users = array_column($datas, 'User_ID');
-    $computers = supabase_query("/rest/v1/Computer?select=*") ?? [];
+    $computers = db_query('SELECT * FROM [Computer]') ?? [];
     foreach ($datas as $row) {
-        $userSigMap[$row['User_ID']] = $row['Signature'] ?? null;
+        $userSigMap[$row['User_ID']] = blob_to_data_uri($row['Signature'] ?? null, $row['SignatureMime'] ?? null);
     }
     foreach ($datas as $u) {
         $userMap[$u['User_ID']] = [
@@ -65,15 +65,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $target_user = ($key !== false) ? $datas[$key] : $user;
 
         $dataRaw = [
-            "Firstname"    => $_POST['firstname'] ?? null,
-            "Lastname"     => $_POST['lastname'] ?? null,
-            "Section"      => $_POST['section'] ?? null,
-            "Role"         => $_POST['role'] ?? null,
-            "Equipment_ID" => ($_POST['equipment_id'] !== "") ? $_POST['equipment_id'] : null,
-            "ComUsername"  => ($_POST['comusername'] !== "") ? $_POST['comusername'] : null,
+            'Firstname' => $_POST['firstname'] ?? null,
+            'Lastname' => $_POST['lastname'] ?? null,
+            'Section' => $_POST['section'] ?? null,
+            'Role' => $_POST['role'] ?? null,
+            'Equipment_ID' => ($_POST['equipment_id'] !== "") ? $_POST['equipment_id'] : null,
+            'ComUsername' => ($_POST['comusername'] !== "") ? $_POST['comusername'] : null,
         ];
         // รายการที่ยอมให้ส่ง null ไปเพื่อ "ล้างค่า" ใน DB
-        $allowNull = ["Equipment_ID", "ComUsername"];
+        $allowNull = ['Equipment_ID', "ComUsername"];
         // เอาค่าที่ไม่ได้ส่งออก
         $dataInput = array_filter($dataRaw, function($value, $key) use ($user, $allowNull) {
             // กฎข้อที่ 1: ถ้ามีค่าจริง (ไม่ใช่ null และไม่ใช่ "") -> ให้ส่งไปอัปเดตเสมอ
@@ -91,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // ใช้ PATCH ไปยังตารางของคุณ
         
         $status = 0; 
-        supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $dataInput, $status);
+        $status = db_update('Users', $dataInput, ['User_ID' => $target_user['User_ID']]) ? 200 : 500;
 
         if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "แก้ไขข้อมูลผู้ใช้สำเร็จ";} 
         else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
@@ -117,11 +117,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         elseif (password_verify($newPass, $target_user['Password'])) {$error_match_pass = true;}
         else {
             $data = [
-                "Password" => password_hash($_POST['newPass'], PASSWORD_DEFAULT),
+                'Password' => password_hash($_POST['newPass'], PASSWORD_DEFAULT),
             ];
             
             $status = 0; 
-            supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $data, $status);
+            $status = db_update('Users', $data, ['User_ID' => $target_user['User_ID']]) ? 200 : 500;
 
             if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "แก้ไขรหัสผ่านสำเร็จ";} 
             else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
@@ -151,18 +151,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         else{
             $signature = $_FILES['signature'];
             $link = uploadSignature($user_id, $signature);
-            if($link['success']){
-                $data = ["Signature" => $link['url']];
-                
-                $status = 0; 
-                supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($target_user['User_ID']), "PATCH", $data, $status);
-                
-                if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "แก้ไขลายเซ็นสำเร็จ";} 
-                else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
-            }
-            else{
-                $status = $link['status'];
-                $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัพโหลดรูปภาพ (Status: $status)";
+            if ($link['success']) {
+                $_SESSION['flash_message'] = "แก้ไขลายเซ็นสำเร็จ";
+            } else {
+                $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัปโหลดลายเซ็น: " . $link['error_msg'];
             }
 
             header("Location: " . $_SERVER['PHP_SELF']);
@@ -185,9 +177,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // 2. อัปเดต Database ให้ Signature เป็น NULL
             if($deleteStatus["success"] || $deleteStatus["status"] == 404){
-                $data = ["Signature" => null];
+                $data = ['Signature' => null];
                 $status = 0;
-                supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($user_id), "PATCH", $data, $status);
+                $status = db_update('Users', $data, ['User_ID' => $user_id]) ? 200 : 500;
 
                 if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "ลบลายเซ็นสำเร็จ";} 
                 else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัปเดตฐานข้อมูล (Status: $status)";}
@@ -244,38 +236,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['flash_message'] = "ผิดพลาด: อนุญาตเฉพาะไฟล์ " . implode(', ', $allowedExtensions) . " เท่านั้น";
         }
         else {
-            // 3. ผ่านทุกเงื่อนไข: เริ่มขั้นตอนอัปโหลดและบันทึก
-            $signature_url = null; // เริ่มต้นเป็น null
-
-            if (isset($_FILES['signature']) && $_FILES['signature']['error'] === UPLOAD_ERR_OK) {
-                $link = uploadSignature($user_id, $_FILES['signature']);
-                if ($link['success']) {
-                    $signature_url = $link['url'];
-                } 
-                else {
-                    $status = $link['status'];
-                    $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ (Status: $status)";
-                    header("Location: " . $_SERVER['PHP_SELF']);
-                    exit;
-                }
-            }
-
+            // 3. ผ่านทุกเงื่อนไข: INSERT user ก่อน แล้วค่อย upload signature
             $data = [
-                "User_ID"      => $user_id,
-                "Firstname"    => $firstname,
-                "Lastname"     => $lastname,
-                "Section"      => $section,
-                "Role"         => $role,
-                "Password"     => password_hash($newPass, PASSWORD_DEFAULT),
-                "Equipment_ID" => $equipment_id,
-                "ComUsername"  => $comusername,
-                "Signature"    => $signature_url // จะเป็น URL หรือ null ก็ได้ตามที่เราตั้งไว้
+                'User_ID'      => $user_id,
+                'Firstname'    => $firstname,
+                'Lastname'     => $lastname,
+                'Section'      => $section,
+                'Role'         => $role,
+                'Password'     => password_hash($newPass, PASSWORD_DEFAULT),
+                'Equipment_ID' => $equipment_id,
+                'ComUsername'  => $comusername,
+                'Signature'    => null,
+                'SignatureMime' => null
             ];
 
             $status = 0;
-            supabase_query("/rest/v1/Users", "POST", $data, $status);
+            $status = db_insert('Users', $data) ? 201 : 500;
 
             if ($status >= 200 && $status < 300) {
+                // INSERT สำเร็จแล้ว ค่อย upload signature (เพราะ uploadSignature ใช้ db_update)
+                if (isset($_FILES['signature']) && $_FILES['signature']['error'] === UPLOAD_ERR_OK) {
+                    $link = uploadSignature($user_id, $_FILES['signature']);
+                    if (!$link['success']) {
+                        $_SESSION['flash_message'] = "สร้างผู้ใช้งานสำเร็จ แต่อัปโหลดลายเซ็นไม่สำเร็จ: " . ($link['error_msg'] ?? '');
+                        header("Location: " . $_SERVER['PHP_SELF']);
+                        exit;
+                    }
+                }
                 $_SESSION['flash_message'] = "สร้างผู้ใช้งานสำเร็จ";
                 header("Location: " . $_SERVER['PHP_SELF']);
                 exit;
@@ -312,31 +299,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         elseif ($is_duplicate) {$error_match_userid = true;} 
         elseif ($new_id === $current_id) {header("Location: " . $_SERVER['PHP_SELF']); exit;} 
         else {
-            $data = ["User_ID" => $new_id];
+            $data = ['User_ID' => $new_id];
             $status = 0;
             
-            supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($current_id), "PATCH", $data, $status);
+            $status = db_update('Users', $data, ['User_ID' => $current_id]) ? 200 : 500;
 
             if ($status >= 200 && $status < 300) {
-                if (!empty($target_user['Signature'])) {
-                    $result = updateSignatureWhenChangeUserID($current_id, $new_id);
-                    if(!$result['success']){
-                        $error_data = json_decode($result['error_msg'], true);
-                        $clean_msg = $error_data['error'] ?? $error_data['message'] ?? $result['error_msg'] ?? 'Unknown Error';
-                        $_SESSION['flash_message'] = "แก้ไขรหัสผู้ใช้สำเร็จ แต่เกิดข้อผิดพลาดในการอัปเดตรูปภาพลายเซ็น (Status: {$result['status']}, Error: $clean_msg)";
-                    }
-                    else{
-                        $signature_data = ["Signature" => $result['url']];
-                        $signature_status = 0;
-                        supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($new_id), "PATCH", $signature_data, $signature_status);
-                        
-                        if($signature_status >= 200 && $signature_status < 300){$_SESSION['flash_message'] = "แก้ไขรหัสผู้ใช้สำเร็จ";}
-                        else{$_SESSION['flash_message'] = "แก้ไขรหัสผู้ใช้สำเร็จ แต่เกิดข้อผิดพลาดในการอัปเดตรูปภาพลายเซ็น (Status: $signature_status)";}
-                        
-                        if ($current_id === $_SESSION['user_id']) {$_SESSION['user_id'] = $new_id;}
-                    }
-                }
-                else {$_SESSION['flash_message'] = "แก้ไขรหัสผู้ใช้สำเร็จ";}
+                // Signature เก็บใน DB ผูกกับ row ของ Users
+                // เมื่อ User_ID เปลี่ยน ข้อมูลย้ายตามอัตโนมัติ ไม่ต้องทำอะไรเพิ่ม
+                $_SESSION['flash_message'] = "แก้ไขรหัสผู้ใช้สำเร็จ";
+                if ($current_id === $_SESSION['user_id']) {$_SESSION['user_id'] = $new_id;}
             } 
             else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาด (Status: $status)";}
             
@@ -565,7 +537,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <label class="formLabel" <?= !empty($user['Signature']) ? '' : 'for="signature"' ?> id="signatureLabel">ลายเซ็น</label>
                                 <div id="signatureContainer" class="formInput">
                                     <?php if (!empty($user['Signature'])): ?>
-                                        <img src="<?= $user['Signature'] ?>" style="max-height: 80px; display: block; max-width: 225px;">
+                                        <img src="<?= blob_to_data_uri($user['Signature'] ?? null, $user['SignatureMime'] ?? null) ?>" style="max-height: 80px; display: block; max-width: 225px;">
                                     <?php else: ?>
                                         <input type="file" id="signature" name="signature" style="width: 100%; height: auto;" accept="image/*" onchange="previewImage(event)" />
                                         <img id="output-image" style="max-height: 80px; display: block; max-width: 225px; margin-top: 10px; display: none;">

@@ -1,6 +1,6 @@
 <!-- Login System with Supabase-->
 <?php
-include 'Supabase.php';
+include 'Database.php';
 session_start();
 
 if (isset($_SESSION['logged_in'])) {
@@ -11,7 +11,7 @@ if (isset($_SESSION['logged_in'])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $user_input = $_POST['userID'] ?? ''; 
     $pass_input = $_POST['password'] ?? ''; 
-    $data = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($user_input) . "&select=*");
+    $data = db_query('SELECT * FROM [Users] WHERE [User_ID] = :id', [':id' => $user_input]);
 
     if($user_input != "" || $pass_input != ""){
         if (is_array($data) && !empty($data)) {

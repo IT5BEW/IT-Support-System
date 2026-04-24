@@ -1,5 +1,5 @@
 <?php
-include 'Supabase.php';
+include 'Database.php';
 session_start();
 
 // เช็คความปลอดภัย: ถ้าไม่ได้ Login ให้เด้งกลับไปหน้า login.php
@@ -10,9 +10,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 // 2. ดึงข้อมูล User
 $logged_user  = $_SESSION['user_id'];
-$data = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($logged_user) . "&select=*");
+$data = db_query('SELECT * FROM [Users] WHERE [User_ID] = :id', [':id' => $logged_user]);
 $user = (!empty($data)) ? $data[0] : null;
-$computers = supabase_query("/rest/v1/Computer?select=*") ?? [];
+$computers = db_query('SELECT * FROM [Computer]') ?? [];
 usort($computers, function($a, $b) {return strnatcmp($a['Equipment_ID'], $b['Equipment_ID']);});
 $computerMap = [];
 foreach ($computers as $com) {
@@ -48,14 +48,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (empty(trim($equipment_id)) || empty(trim($comname)) || empty(trim($ip)) || empty(trim($section))) {$error_computerempty = true;} 
         else{
             $data = [
-                "Equipment_ID" => $equipment_id,
-                "ComName" => $comname,
-                "IP" => $ip,
-                "Section" => $section,
+                'Equipment_ID' => $equipment_id,
+                'ComName' => $comname,
+                'IP' => $ip,
+                'Section' => $section,
             ];
             
             $status = 0; 
-            supabase_query("/rest/v1/Computer?Equipment_ID=eq." . urlencode($target_com['Equipment_ID']), "PATCH", $data, $status);
+            $status = db_update('Computer', $data, ['Equipment_ID' => $target_com['Equipment_ID']]) ? 200 : 500;
 
             if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "แก้ไขข้อมูลคอมพิวเตอร์สำเร็จ";} 
             else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
@@ -77,14 +77,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (empty(trim($equipment_id)) || empty(trim($comname)) || empty(trim($ip)) || empty(trim($section))) {$error_computerempty = true;} 
         else{
             $data = [
-                "Equipment_ID" => $equipment_id,
-                "ComName" => $comname,
-                "IP" => $ip,
-                "Section" => $section,
+                'Equipment_ID' => $equipment_id,
+                'ComName' => $comname,
+                'IP' => $ip,
+                'Section' => $section,
             ];
             
             $status = 0; 
-            supabase_query("/rest/v1/Computer", "POST", $data, $status);
+            $status = db_insert('Computer', $data) ? 201 : 500;
 
             if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "เพิ่มข้อมูลคอมพิวเตอร์สำเร็จ";} 
             else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}

@@ -1,5 +1,5 @@
 <?php
-include 'Supabase.php';
+include 'Database.php';
 session_start();
 
 // เช็คความปลอดภัย: ถ้าไม่ได้ Login ให้เด้งกลับไปหน้า login.php
@@ -10,22 +10,22 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 // 2. ดึงข้อมูล User
 $logged_user  = $_SESSION['user_id'];
-$data = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($logged_user) . "&select=*");
+$data = db_query('SELECT * FROM [Users] WHERE [User_ID] = :id', [':id' => $logged_user]);
 $user = (!empty($data)) ? $data[0] : null;
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") { 
     $get_form_id = $_GET['form_id'] ?? null;
     if ($get_form_id) {
-        $reports = supabase_query("/rest/v1/RequestForm?Form_ID=eq." . urlencode($get_form_id) . "&select=*") ?? [];
+        $reports = db_query('SELECT * FROM [RequestForm] WHERE [Form_ID] = :id', [':id' => $get_form_id]) ?? [];
         $detailReport = (!empty($reports)) ? $reports[0] : null;
         if (!$detailReport) {
             header("Location: RequestHistory.php"); 
             exit();
         }
-        $userData = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($detailReport['User_ID']) . "&select=Firstname,Section") ?? [];
+        $userData = db_query('SELECT [Firstname], [Section] FROM [Users] WHERE [User_ID] = :id', [':id' => $detailReport['User_ID']]) ?? [];
         $detailUser = (!empty($userData)) ? $userData[0] : null;
 
-        $compData = supabase_query("/rest/v1/Computer?Equipment_ID=eq." . urlencode($detailReport['Equipment_ID']) . "&select=ComName") ?? [];
+        $compData = db_query('SELECT [ComName] FROM [Computer] WHERE [Equipment_ID] = :id', [':id' => $detailReport['Equipment_ID']]) ?? [];
         $detailComp = (!empty($compData)) ? $compData[0] : null;
     }
 }
@@ -133,7 +133,7 @@ function getStepClass($stepNumber, $currentStatus) {
                                     <p style="margin: 0;"><b style="font-weight: bold;">ภาพประกอบ:</b></p>
                                     <div style="width: 100%;">
                                         <?php if (!empty($detailReport['DetailedImage'])): ?>
-                                            <img src="<?php echo $detailReport['DetailedImage'] ?? ''; ?>" alt="placeholder" style="object-fit: contain; width: 100%; height: 100%;">
+                                            <img src="<?= blob_to_data_uri($detailReport['DetailedImage'] ?? null, $detailReport['DetailedImageMime'] ?? null) ?>" alt="placeholder" style="object-fit: contain; width: 100%; height: 100%;">
                                         <?php else: ?>
                                             <p style="margin: 0 0 10px;">ไม่มีภาพประกอบ</p>
                                         <?php endif ?>

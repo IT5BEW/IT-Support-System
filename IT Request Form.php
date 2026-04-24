@@ -1,5 +1,5 @@
 <?php
-include 'Supabase.php';
+include 'Database.php';
 session_start();
 
 // 1. เช็คความปลอดภัย: ถ้าไม่ได้ Login ให้เด้งกลับไปหน้า login.php
@@ -10,10 +10,10 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 // 2. ดึงข้อมูล User
 $logged_user  = $_SESSION['user_id'];
-$data = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($logged_user) . "&select=*");
+$data = db_query('SELECT * FROM [Users] WHERE [User_ID] = :id', [':id' => $logged_user]);
 $user = (!empty($data)) ? $data[0] : null;
 
-$computers = supabase_query("/rest/v1/Computer?select=*") ?? [];
+$computers = db_query('SELECT * FROM [Computer]') ?? [];
 usort($computers, function($a, $b) {return strnatcmp($a['Equipment_ID'], $b['Equipment_ID']);});
 $mycomputer = array_filter($computers, fn($c) => $c['Equipment_ID'] === $user['Equipment_ID']);
 $mycomputer = reset($mycomputer) ?: null;
@@ -65,9 +65,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if(!$etc){$etctext = '';}
 
             if ($detailImage && $detailImage['error'] !== UPLOAD_ERR_NO_FILE) {
-                $uploadedDetailImage = uploadImageToForm($form_id, $detailImage, "DetailImage");
+                $uploadedDetailImage = uploadImageToForm($form_id, $detailImage, 'DetailedImage', 'DetailedImageMime');
                 if ($uploadedDetailImage['success']) {
-                    $detailImageInput = $uploadedDetailImage['url'];
+                    $detailImageInput = true; // BLOB บันทึกลง DB แล้ว
                 } 
                 else {
                     $status = $uploadedDetailImage['status'];
@@ -80,9 +80,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if($signature == 'useSignature'){
                 $usesignature = true;
-                $signatureUpload = getImageFromUrlAndUploadToForm($form_id, $user['Signature'], "User_Signature");
+                $signatureUpload = getImageFromUrlAndUploadToForm($form_id, $user['User_ID']);
                 if ($signatureUpload['success']) {
-                    $signatureInput = $signatureUpload['url'];
+                    $signatureInput = $signatureUpload['path'];
                 } 
                 else {
                     $status = $signatureUpload['status'];
@@ -96,28 +96,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             $data = [
-                "Form_ID"      => $form_id,
-                "User_ID"      => $user['User_ID'],
-                "Equipment_ID" => $user['Equipment_ID'],
-                "Section"      => $user['Section'],
-                "FormStatus"   => 'WaitForApproval',
-                "Date"         => $date_ymd,
-                "FixCom"       => $fixcom,
-                "FixETC"       => $fixetc,
-                "ReInstall"    => $reinstall,
-                "Broken"       => $broken,
-                "ETC"          => $etc,
-                "ETCText"      => $etctext,
-                "CauseText1"   => $cause1,
-                "CauseText2"   => $cause2,
-                "CauseText3"   => $cause3,
-                "UseSignature" => $usesignature,
-                "Signature"    => $signatureInput,
-                "DetailedImage"  => $detailImageInput
+                'Form_ID' => $form_id,
+                'User_ID' => $user['User_ID'],
+                'Equipment_ID' => $user['Equipment_ID'],
+                'Section' => $user['Section'],
+                'FormStatus' => 'WaitForApproval',
+                'Date' => $date_ymd,
+                'FixCom' => $fixcom,
+                'FixETC' => $fixetc,
+                'ReInstall' => $reinstall,
+                'Broken' => $broken,
+                'ETC' => $etc,
+                'ETCText' => $etctext,
+                'CauseText1' => $cause1,
+                'CauseText2' => $cause2,
+                'CauseText3' => $cause3,
+                'UseSignature' => $usesignature,
+                'Signature' => $signatureInput,
+                'DetailedImage' => null // uploadImageToForm() บันทึกลง DB ให้แล้ว
             ];
 
             $status = 0;
-            supabase_query("/rest/v1/RequestForm", "POST", $data, $status);
+            $status = db_insert('RequestForm', $data) ? 201 : 500;
 
             if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "ส่งใบขอแจ้งซ่อมสำเร็จ";} 
             else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
@@ -131,7 +131,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $get_form_id = $_POST['form_id_to_save'] ?? '';
 
         $status_check = 0;
-        $existingData = supabase_query("/rest/v1/RequestForm?Form_ID=eq." . urlencode($get_form_id), "GET", null, $status_check);
+        $existingData = db_query('SELECT * FROM [RequestForm] WHERE [Form_ID] = :id', [':id' => $get_form_id]);
         $editReport = (!empty($existingData)) ? $existingData[0] : null;
 
         $fixcom    = isset($_POST['FixCom']) ? true : false;
@@ -173,9 +173,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if(!$etc){$etctext = '';}
 
             if ($detailImage && $detailImage['error'] !== UPLOAD_ERR_NO_FILE) {
-                $uploadedDetailImage = uploadImageToForm($form_id, $detailImage, "DetailImage");
+                $uploadedDetailImage = uploadImageToForm($form_id, $detailImage, 'DetailedImage', 'DetailedImageMime');
                 if ($uploadedDetailImage['success']) {
-                    $detailImageInput = $uploadedDetailImage['url'];
+                    $detailImageInput = true; // BLOB บันทึกลง DB แล้ว
                 } 
                 else {
                     $status = $uploadedDetailImage['status'];
@@ -191,10 +191,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if ($signature == 'useSignature') {
                 if (!empty($user['Signature'])) {
-                    $signatureUpload = getImageFromUrlAndUploadToForm($form_id, $user['Signature'], "User_Signature");
+                    $signatureUpload = getImageFromUrlAndUploadToForm($form_id, $user['User_ID']);
                     if ($signatureUpload['success']) {
                         $usesignature = true;
-                        $signatureInput = $signatureUpload['url'];
+                        $signatureInput = $signatureUpload['path'];
                     } 
                     else {
                         $status = $signatureUpload['status'];
@@ -213,26 +213,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             $data = [
-                "User_ID"      => $editReport['User_ID'] ?? $user['User_ID'],
-                "Equipment_ID" => $editReport['Equipment_ID'] ?? $user['Equipment_ID'],
-                "Section"      => $editReport['Section'] ?? $user['Section'],
-                "Date"         => $date_ymd,
-                "FixCom"       => $fixcom,
-                "FixETC"       => $fixetc,
-                "ReInstall"    => $reinstall,
-                "Broken"       => $broken,
-                "ETC"          => $etc,
-                "ETCText"      => $etctext,
-                "CauseText1"   => $cause1,
-                "CauseText2"   => $cause2,
-                "CauseText3"   => $cause3,
-                "UseSignature" => $usesignature,
-                "Signature"    => $signatureInput,
-                "DetailedImage"  => $detailImageInput
+                'User_ID' => $editReport['User_ID'] ?? $user['User_ID'],
+                'Equipment_ID' => $editReport['Equipment_ID'] ?? $user['Equipment_ID'],
+                'Section' => $editReport['Section'] ?? $user['Section'],
+                'Date' => $date_ymd,
+                'FixCom' => $fixcom,
+                'FixETC' => $fixetc,
+                'ReInstall' => $reinstall,
+                'Broken' => $broken,
+                'ETC' => $etc,
+                'ETCText' => $etctext,
+                'CauseText1' => $cause1,
+                'CauseText2' => $cause2,
+                'CauseText3' => $cause3,
+                'UseSignature' => $usesignature,
+                'Signature' => $signatureInput,
+                'DetailedImage' => null // uploadImageToForm() บันทึกลง DB ให้แล้ว
             ];
 
             $status = 0;
-            supabase_query("/rest/v1/RequestForm?Form_ID=eq." . urlencode($get_form_id), "PATCH", $data, $status);
+            $status = db_update('RequestForm', $data, ['Form_ID' => $get_form_id]) ? 200 : 500;
 
             if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "แก้ไขใบขอแจ้งซ่อมสำเร็จ";} 
             else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
@@ -252,10 +252,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['flash_message'] = $form_id;
         if (!empty($form_id)) {
             // ลบไฟล์ใน Storage
-            deleteFilesByPrefix($form_id, "DetailImage");
+            deleteFilesByPrefix($form_id, 'DetailedImage', 'DetailedImageMime');
             
             $status = 0;
-            supabase_query("/rest/v1/RequestForm?Form_ID=eq." . urlencode($form_id), "PATCH", ["DetailedImage" => null], $status);
+            $status = db_update('RequestForm', ['DetailedImage' => null, 'DetailedImageMime' => null], ['Form_ID' => $form_id]) ? 200 : 500;
 
             if ($status >= 200 && $status < 300) {
                 $_SESSION['flash_message'] = "ลบรูปภาพประกอบสำเร็จ";
@@ -276,20 +276,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 if ($_SERVER["REQUEST_METHOD"] == "GET") { 
     $get_form_id = $_GET['form_id'] ?? null;
     if ($get_form_id) {
-        $reports = supabase_query("/rest/v1/RequestForm?Form_ID=eq." . urlencode($get_form_id) . "&select=*") ?? [];
+        $reports = db_query('SELECT * FROM [RequestForm] WHERE [Form_ID] = :id', [':id' => $get_form_id]) ?? [];
         $editReport = (!empty($reports)) ? $reports[0] : null;
         if (!$editReport) {
             header("Location: " . strtok($_SERVER["REQUEST_URI"], '?')); 
             exit();
         }
-        if ($editReport['User_ID'] !== $user['User_ID']) {
+        if ($editReport['UID'] !== $user['UID']) {
             header("Location: " . strtok($_SERVER["REQUEST_URI"], '?')); 
             exit();
         }
-        $userData = supabase_query("/rest/v1/Users?User_ID=eq." . urlencode($editReport['User_ID']) . "&select=Firstname,Section") ?? [];
+        $userData = db_query('SELECT [Firstname], [Section] FROM [Users] WHERE [User_ID] = :id', [':id' => $editReport['User_ID']]) ?? [];
         $editUser = (!empty($userData)) ? $userData[0] : null;
 
-        $compData = supabase_query("/rest/v1/Computer?Equipment_ID=eq." . urlencode($editReport['Equipment_ID']) . "&select=ComName") ?? [];
+        $compData = db_query('SELECT [ComName] FROM [Computer] WHERE [Equipment_ID] = :id', [':id' => $editReport['Equipment_ID']]) ?? [];
         $editComp = (!empty($compData)) ? $compData[0] : null;
     }
 }
@@ -400,7 +400,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
                         <p style="margin: 0;"><b style="font-weight: bold;">รูปภาพประกอบ :</b></p>
                         <?php if (!empty($editReport['DetailedImage'])): ?>
-                            <img src="<?= $editReport['DetailedImage'] . '?t=' . time() ?>" class="previewImage" onerror="this.style.display='none';">
+                            <img src="<?= blob_to_data_uri($editReport['DetailedImage'] ?? null, $editReport['DetailedImageMime'] ?? null) ?>" class="previewImage" onerror="this.style.display='none';">
                             <button type="button" id="removeImageButton" onclick="execDeleteImage('<?= $get_form_id ?>')">
                                 <i class="fa-solid fa-trash-can"></i>
                                 <p class="buttonLabel">นำรูปภาพออก</p>
@@ -424,7 +424,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                                 <input type="radio" id="useSignature" name="signature" value="useSignature" <?php echo (!$hasSig) ? 'disabled' : ''; ?> <?php echo ($hasSig) ? 'checked' : ''; ?> >
                                 <label for="useSignature" id="useSignatureLabel">ใช้ลายเซ็นในการเซ็นเอกสาร:
                                 <?php if ($hasSig): ?>
-                                    <img src="<?= !empty($user['Signature']) ? $user['Signature'] : $editReport['Signature'] ?>" style="max-height: 80px;">
+                                    <img src="<?= blob_to_data_uri($user['Signature'] ?? $editReport['Signature'] ?? null, $user['SignatureMime'] ?? $editReport['SignatureMime'] ?? null) ?>" style="max-height: 80px;">
                                 <?php endif ?>
                                  </label>
                                 <p class="requiredText" id="check3" <?= $error_check3 ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> กรุณากรอกฟอร์มที่กำหนดให้ครบทุกช่อง</p>
