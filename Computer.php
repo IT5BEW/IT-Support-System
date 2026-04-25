@@ -71,9 +71,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $ip = $_POST['ip'] ?? null;
         $section = $_POST['section'] ?? null;
 
-        $key = array_search($computer, array_column($computers ?? [], 'Equipment_ID'));
-        $target_com = ($key !== false) ? $computers[$key] : $mycomputer;
-
         if (empty(trim($equipment_id)) || empty(trim($comname)) || empty(trim($ip)) || empty(trim($section))) {$error_computerempty = true;} 
         else{
             $data = [
@@ -143,8 +140,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="formItemRow">
                                 <label class="formLabel" for="computer_select">คอมพิวเตอร์</label>
                                 <select id="computer_select" name="computer_select" class="formInput" onfocus="this.size=10;" onblur="this.size=1;" onchange="this.size=1; this.blur();">
-                                    <?php $myComputer = $user['Equipment_ID']; ?>
+                                    <?php $myComputer = $user['Equipment_ID'] ?? ''; ?>
+                                    <?php if ($myComputer): ?>
                                     <option value="<?= $myComputer ?>" selected><?= $myComputer ?></option>
+                                    <?php endif; ?>
                                     <?php foreach ($computers as $eachdata): ?>
                                         <?php if ($eachdata['Equipment_ID'] == $myComputer) continue; ?>
                                         <option value="<?= $eachdata['Equipment_ID'] ?>"><?= $eachdata['Equipment_ID'] ?></option>
@@ -157,7 +156,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </div>
 
                     <div class="headerText">รายละเอียดคอมพิวเตอร์</div>
-                    <form action="" id="computerForm" method="POST" class="formContainer" data-computers='<?= $compJson ?>' onsubmit="getComputerData(this, '<?php echo $user['Equipment_ID'] ?>')">
+                    <form action="" id="computerForm" method="POST" class="formContainer" data-computers='<?= $compJson ?>' onsubmit="getComputerData(this, '<?php echo $user['Equipment_ID'] ?? '' ?>')">
                         <input type="hidden" name="computer">
                         <div class="formItemContainer">
                             <div class="formItemRow">
@@ -177,7 +176,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <select id="section" name="section" class="formInput">
                                         <option value="" hidden>ไม่มี</option>
                                         <?php foreach ($all_sections as $section): ?>
-                                            <option value="<?= $section ?>" <?= ($section == $mycomputer['Section']) ? 'selected' : '' ?>>
+                                            <option value="<?= $section ?>" <?= ($mycomputer && $section == $mycomputer['Section']) ? 'selected' : '' ?>>
                                                 <?= $section ?>
                                             </option>
                                         <?php endforeach; ?>
@@ -212,5 +211,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     ?>
 
     <script src="Computer Folder/Computer.js"></script>
+
+    <?php if (empty($computers)): ?>
+        <script>
+            NewComputer(true)
+            document.getElementById('editAccount').checked = false;
+            document.getElementById('editAccount').disabled = true;
+            document.getElementById('newAccount').checked = true;
+        </script>
+    <?php else:?> 
+        <script>
+            NewComputer(false)
+            document.getElementById('editAccount').checked = true;
+            document.getElementById('editAccount').disabled = false;
+            document.getElementById('newAccount').checked = false;
+        </script>       
+    <?php endif ?> 
+    
 </body>
 </html>

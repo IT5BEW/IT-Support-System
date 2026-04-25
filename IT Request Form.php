@@ -81,12 +81,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if($signature == 'useSignature'){
                 $usesignature = true;
                 $signatureUpload = getImageFromUrlAndUploadToForm($form_id, $user['User_ID']);
-                if ($signatureUpload['success']) {
-                    $signatureInput = $signatureUpload['path'];
-                } 
-                else {
-                    $status = $signatureUpload['status'];
-                    $_SESSION['flash_message'] = $signatureUpload['error_mgs'] . " (Status: $status)";
+                if (!$signatureUpload['success']) {
+                    $_SESSION['flash_message'] = $signatureUpload['error_msg'] ?? 'อัปโหลดลายเซ็นไม่สำเร็จ';
                     header("Location: " . $_SERVER['PHP_SELF']);
                     exit;
                 }
@@ -97,8 +93,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             $data = [
                 'Form_ID' => $form_id,
-                'User_ID' => $user['User_ID'],
-                'Equipment_ID' => $user['Equipment_ID'],
+                'UID'     => $user['UID'],
+                'CID'     => !empty($user['Equipment_ID'])
+                    ? (db_query('SELECT [CID] FROM [Computer] WHERE [Equipment_ID] = :id', [':id' => $user['Equipment_ID']])[0]['CID'] ?? null)
+                    : null,
                 'Section' => $user['Section'],
                 'FormStatus' => 'WaitForApproval',
                 'Date' => $date_ymd,
@@ -112,8 +110,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 'CauseText2' => $cause2,
                 'CauseText3' => $cause3,
                 'UseSignature' => $usesignature,
-                'Signature' => $signatureInput,
-                'DetailedImage' => null // uploadImageToForm() บันทึกลง DB ให้แล้ว
             ];
 
             $status = 0;
@@ -194,11 +190,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $signatureUpload = getImageFromUrlAndUploadToForm($form_id, $user['User_ID']);
                     if ($signatureUpload['success']) {
                         $usesignature = true;
-                        $signatureInput = $signatureUpload['path'];
                     } 
                     else {
-                        $status = $signatureUpload['status'];
-                        $_SESSION['flash_message'] = $signatureUpload['error_mgs'] . " (Status: $status)";
+                        $_SESSION['flash_message'] = $signatureUpload['error_msg'] ?? 'อัปโหลดลายเซ็นไม่สำเร็จ';
                         header("Location: " . $_SERVER['PHP_SELF']);
                         exit;
                     }
@@ -209,12 +203,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } 
             else {
                 $usesignature = false;
-                $signatureInput = null;
             }
 
             $data = [
-                'User_ID' => $editReport['User_ID'] ?? $user['User_ID'],
-                'Equipment_ID' => $editReport['Equipment_ID'] ?? $user['Equipment_ID'],
+                // UID และ CID ไม่เปลี่ยนตอน edit
                 'Section' => $editReport['Section'] ?? $user['Section'],
                 'Date' => $date_ymd,
                 'FixCom' => $fixcom,
@@ -227,8 +219,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 'CauseText2' => $cause2,
                 'CauseText3' => $cause3,
                 'UseSignature' => $usesignature,
-                'Signature' => $signatureInput,
-                'DetailedImage' => null // uploadImageToForm() บันทึกลง DB ให้แล้ว
             ];
 
             $status = 0;
@@ -286,10 +276,10 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             header("Location: " . strtok($_SERVER["REQUEST_URI"], '?')); 
             exit();
         }
-        $userData = db_query('SELECT [Firstname], [Section] FROM [Users] WHERE [User_ID] = :id', [':id' => $editReport['User_ID']]) ?? [];
+        $userData = db_query('SELECT [Firstname], [Section] FROM [Users] WHERE [UID] = :uid', [':uid' => $editReport['UID']]) ?? [];
         $editUser = (!empty($userData)) ? $userData[0] : null;
 
-        $compData = db_query('SELECT [ComName] FROM [Computer] WHERE [Equipment_ID] = :id', [':id' => $editReport['Equipment_ID']]) ?? [];
+        $compData = !empty($editReport['CID']) ? db_query('SELECT [ComName] FROM [Computer] WHERE [CID] = :cid', [':cid' => $editReport['CID']]) : [];
         $editComp = (!empty($compData)) ? $compData[0] : null;
     }
 }
