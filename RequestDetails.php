@@ -22,10 +22,10 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             header("Location: RequestHistory.php"); 
             exit();
         }
-        $userData = db_query('SELECT [Firstname], [Section] FROM [Users] WHERE [User_ID] = :id', [':id' => $detailReport['User_ID']]) ?? [];
+        $userData = db_query('SELECT [Firstname], [Section] FROM [Users] WHERE [UID] = :id', [':id' => $detailReport['UID']]) ?? [];
         $detailUser = (!empty($userData)) ? $userData[0] : null;
 
-        $compData = db_query('SELECT [ComName] FROM [Computer] WHERE [Equipment_ID] = :id', [':id' => $detailReport['Equipment_ID']]) ?? [];
+        $compData = db_query('SELECT [Equipment_ID], [ComName] FROM [Computer] WHERE [CID] = :id', [':id' => $detailReport['CID']]) ?? [];
         $detailComp = (!empty($compData)) ? $compData[0] : null;
     }
 }
@@ -38,17 +38,22 @@ function getStepClass($stepNumber, $currentStatus) {
             return "done"; // สร้างแล้วเสมอ
         case 2: // ขั้นตอนอนุมัติ
             if ($currentStatus == 'HoD_Denied') return "cancel";
-            if (in_array($currentStatus, ['WaitForConfirm', 'WaitForFixing', 'Complete'])) return "done";
+            if (in_array($currentStatus, ['WaitForConfirm','IT_Director_Denied', 'WaitForFixing', 'WaitForFinalize' ,'Fixed_Denied', 'Complete'])) return "done";
             if ($currentStatus == 'WaitForApproval') return "active";
             break;
         case 3: // ขั้นตอนยืนยัน
             if ($currentStatus == 'IT_Director_Denied') return "cancel";
-            if (in_array($currentStatus, ['WaitForFixing', 'Complete'])) return "done";
+            if (in_array($currentStatus, ['WaitForFixing', 'WaitForFinalize', 'Complete', 'Fixed_Denied'])) return "done";
             if ($currentStatus == 'WaitForConfirm') return "active";
             break;
-        case 4: // ขั้นตอนสุดท้าย
-            if ($currentStatus == 'Complete') return "done";
+        case 4: // ขั้นตอนซ่อมแซม
+            if (in_array($currentStatus, ['WaitForFinalize', 'Complete', 'Fixed_Denied'])) return "done";
             if ($currentStatus == 'WaitForFixing') return "active";
+            break;
+        case 5: // ขั้นตอนสุดท้าย
+            if ($currentStatus == 'Complete') return "done";
+            if ($currentStatus == 'Fixed_Denied') return "cancel";
+            if ($currentStatus == 'WaitForFinalize') return "active";
             break;
     }
     return ""; // ยังไม่ถึงขั้นตอนนั้น
@@ -84,7 +89,8 @@ function getStepClass($stepNumber, $currentStatus) {
                         <li class="<?php echo getStepClass(1, $currentStatus); ?>">สร้างคำขอ</li>
                         <li class="<?php echo getStepClass(2, $currentStatus); ?>">อนุมัติ</li>
                         <li class="<?php echo getStepClass(3, $currentStatus); ?>">ตรวจสอบ</li>
-                        <li class="<?php echo getStepClass(4, $currentStatus); ?>">เสร็จสิ้น</li>
+                        <li class="<?php echo getStepClass(4, $currentStatus); ?>">ซ่อมแซม</li>
+                        <li class="<?php echo getStepClass(5, $currentStatus); ?>">เสร็จสิ้น</li>
                     </ul>
 
                     <div class="item">
@@ -99,7 +105,7 @@ function getStepClass($stepNumber, $currentStatus) {
                                     </ul>
                                     <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดผู้ใช้งาน:</b></p>
                                     <ul style="margin: 0 0 10px;">
-                                        <li>Equipment ID: <?php echo $detailReport['Equipment_ID'] ?? 'ไม่มีคอมพิวเตอร์'; ?></li>
+                                        <li>Equipment ID: <?php echo $detailComp['Equipment_ID'] ?? 'ไม่มีคอมพิวเตอร์'; ?></li>
                                         <li>Com. Name: <?php echo $detailComp['ComName'] ?? 'ไม่มีชื่อคอมพิวเตอร์'; ?></li>
                                         <li>User: <?php echo $detailUser['Firstname'] ?? 'ไม่มีชื่อผู้ใช้'; ?></li>
                                         <li>Section: <?php echo $detailReport['Section'] ?? 'ไม่มีแผนก'; ?></li>

@@ -25,11 +25,11 @@ $error_filesize = false;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") { 
     if (isset($_POST['create_form'])) {
-        $fixcom    = isset($_POST['FixCom']) ? true : false;
-        $fixetc    = isset($_POST['FixETC']) ? true : false;
-        $reinstall = isset($_POST['ReInstall']) ? true : false;
-        $broken    = isset($_POST['Broken']) ? true : false;
-        $etc       = isset($_POST['ETC']) ? true : false;
+        $fixcom    = isset($_POST['FixCom']) ? 1 : 0;
+        $fixetc    = isset($_POST['FixETC']) ? 1 : 0;
+        $reinstall = isset($_POST['ReInstall']) ? 1 : 0;
+        $broken    = isset($_POST['Broken']) ? 1 : 0;
+        $etc       = isset($_POST['ETC']) ? 1 : 0;
         $etctext   = $_POST['ETCText'] ?? '';
         $cause1    = $_POST['cause1'] ?? '';
         $cause2    = $_POST['cause2'] ?? '';
@@ -64,61 +64,57 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if(!$etc){$etctext = '';}
 
-            if ($detailImage && $detailImage['error'] !== UPLOAD_ERR_NO_FILE) {
-                $uploadedDetailImage = uploadImageToForm($form_id, $detailImage, 'DetailedImage', 'DetailedImageMime');
-                if ($uploadedDetailImage['success']) {
-                    $detailImageInput = true; // BLOB บันทึกลง DB แล้ว
-                } 
-                else {
-                    $status = $uploadedDetailImage['status'];
-                    $_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการอัปโหลดประกอบ (Status: $status)";
-                    header("Location: " . $_SERVER['PHP_SELF']);
-                    exit;
-                }
-            }
-            else {$detailImageInput = null; }
-
-            if($signature == 'useSignature'){
-                $usesignature = true;
-                $signatureUpload = getImageFromUrlAndUploadToForm($form_id, $user['User_ID']);
-                if (!$signatureUpload['success']) {
-                    $_SESSION['flash_message'] = $signatureUpload['error_msg'] ?? 'อัปโหลดลายเซ็นไม่สำเร็จ';
-                    header("Location: " . $_SERVER['PHP_SELF']);
-                    exit;
-                }
-            }
-            else{
-                $usesignature = false;
-            }
+            // เตรียม flag ก่อน INSERT
+            $hasDetailImage = ($detailImage && $detailImage['error'] !== UPLOAD_ERR_NO_FILE);
+            $usesignature   = ($signature == 'useSignature') ? 1 : 0;
 
             $data = [
-                'Form_ID' => $form_id,
-                'UID'     => $user['UID'],
-                'CID'     => !empty($user['Equipment_ID'])
+                'Form_ID'      => $form_id,
+                'UID'          => $user['UID'],
+                'CID'          => !empty($user['Equipment_ID'])
                     ? (db_query('SELECT [CID] FROM [Computer] WHERE [Equipment_ID] = :id', [':id' => $user['Equipment_ID']])[0]['CID'] ?? null)
                     : null,
-                'Section' => $user['Section'],
-                'FormStatus' => 'WaitForApproval',
-                'Date' => $date_ymd,
-                'FixCom' => $fixcom,
-                'FixETC' => $fixetc,
-                'ReInstall' => $reinstall,
-                'Broken' => $broken,
-                'ETC' => $etc,
-                'ETCText' => $etctext,
-                'CauseText1' => $cause1,
-                'CauseText2' => $cause2,
-                'CauseText3' => $cause3,
+                'Section'      => $user['Section'],
+                'FormStatus'   => 'WaitForApproval',
+                'Date'         => $date_ymd,
+                'FixCom'       => $fixcom,
+                'FixETC'       => $fixetc,
+                'ReInstall'    => $reinstall,
+                'Broken'       => $broken,
+                'ETC'          => $etc,
+                'ETCText'      => $etctext,
+                'CauseText1'   => $cause1,
+                'CauseText2'   => $cause2,
+                'CauseText3'   => $cause3,
                 'UseSignature' => $usesignature,
             ];
 
             $status = 0;
             $status = db_insert('RequestForm', $data) ? 201 : 500;
 
-            if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "ส่งใบขอแจ้งซ่อมสำเร็จ";} 
+            if ($status >= 200 && $status < 300) {
+                // INSERT สำเร็จแล้ว ค่อย upload BLOB
+                if ($hasDetailImage) {
+                    $uploadedDetailImage = uploadImageToForm($form_id, $detailImage, 'DetailedImage', 'DetailedImageMime');
+                    if (!$uploadedDetailImage['success']) {
+                        $_SESSION['flash_message'] = "ส่งใบขอแจ้งซ่อมสำเร็จ แต่อัปโหลดรูปภาพไม่สำเร็จ";
+                        header("Location: " . $_SERVER['PHP_SELF']);
+                        exit;
+                    }
+                }
+                if ($usesignature) {
+                    $signatureUpload = getBinaryImageAndUploadToForm($form_id, $user['User_ID']);
+                    if (!$signatureUpload['success']) {
+                        $_SESSION['flash_message'] = "ส่งใบขอแจ้งซ่อมสำเร็จ แต่อัปโหลดลายเซ็นไม่สำเร็จ: " . ($signatureUpload['error_msg'] ?? '');
+                        header("Location: " . $_SERVER['PHP_SELF']);
+                        exit;
+                    }
+                }
+                $_SESSION['flash_message'] = "ส่งใบขอแจ้งซ่อมสำเร็จ";
+            }
             else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
         }
-
+        
         header("Location: " . $_SERVER['PHP_SELF']);
         exit;
     }
@@ -130,16 +126,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $existingData = db_query('SELECT * FROM [RequestForm] WHERE [Form_ID] = :id', [':id' => $get_form_id]);
         $editReport = (!empty($existingData)) ? $existingData[0] : null;
 
-        $fixcom    = isset($_POST['FixCom']) ? true : false;
-        $fixetc    = isset($_POST['FixETC']) ? true : false;
-        $reinstall = isset($_POST['ReInstall']) ? true : false;
-        $broken    = isset($_POST['Broken']) ? true : false;
-        $etc       = isset($_POST['ETC']) ? true : false;
+        $fixcom    = isset($_POST['FixCom']) ? 1 : 0;
+        $fixetc    = isset($_POST['FixETC']) ? 1 : 0;
+        $reinstall = isset($_POST['ReInstall']) ? 1 : 0;
+        $broken    = isset($_POST['Broken']) ? 1 : 0;
+        $etc       = isset($_POST['ETC']) ? 1 : 0;
         $etctext   = $_POST['ETCText'] ?? '';
         $cause1    = $_POST['cause1'] ?? '';
         $cause2    = $_POST['cause2'] ?? '';
         $cause3    = $_POST['cause3'] ?? ''; // รับมาเพื่อเช็ค mismatch
-        $signature = $_POST['signature'] ?? 'ทดสอบ';
+        $signature = $_POST['signature'] ?? '';
         $detailImage = $_FILES['detailImage'] ?? null;
 
         $error_check1 = (!$fixcom && !$fixetc) ? true : false;
@@ -187,9 +183,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if ($signature == 'useSignature') {
                 if (!empty($user['Signature'])) {
-                    $signatureUpload = getImageFromUrlAndUploadToForm($form_id, $user['User_ID']);
+                    $signatureUpload = getBinaryImageAndUploadToForm($form_id, $user['User_ID']);
                     if ($signatureUpload['success']) {
-                        $usesignature = true;
+                        $usesignature = 1;
                     } 
                     else {
                         $_SESSION['flash_message'] = $signatureUpload['error_msg'] ?? 'อัปโหลดลายเซ็นไม่สำเร็จ';
@@ -198,11 +194,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     }
                 } 
                 elseif (!empty($editReport['Signature'])) {
-                    $usesignature = true;
+                    $usesignature = 1;
                 }
             } 
             else {
-                $usesignature = false;
+                $usesignature = 0;
             }
 
             $data = [
@@ -218,7 +214,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 'CauseText1' => $cause1,
                 'CauseText2' => $cause2,
                 'CauseText3' => $cause3,
-                'UseSignature' => $usesignature,
+                'UseSignature' => $usesignature
             ];
 
             $status = 0;
@@ -344,10 +340,10 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                         <hr style="margin:25px 0; border: 1px solid #e2e8f0">
                         
                         <p style="margin: 0;"><span style="color: red;">* </span><b style="font-weight: bold;">โปรดระบุหัวข้อที่ต้องการปรับปรุงแก้ไข</b></p>
-                        <input type="checkbox" id="FixCom" name="FixCom" value="1" <?php echo (!empty($editReport['FixCom']) && $editReport['FixCom'] === true) ? 'checked' : ''; ?>>
+                        <input type="checkbox" id="FixCom" name="FixCom" value="1" <?php echo (!empty($editReport['FixCom']) && $editReport['FixCom'] == 1) ? 'checked' : ''; ?>>
                         <label for="FixCom">ต้องการปรับปรุงแก้ไข คอมพิวเตอร์ โปรแกรมและอุปกรณ์ต่อพ่วง</label><br>
 
-                        <input type="checkbox" id="FixETC" name="FixETC" value="1" <?php echo (!empty($editReport['FixETC']) && $editReport['FixETC'] === true) ? 'checked' : ''; ?>>
+                        <input type="checkbox" id="FixETC" name="FixETC" value="1" <?php echo (!empty($editReport['FixETC']) && $editReport['FixETC'] == 1) ? 'checked' : ''; ?>>
                         <label for="FixETC">ต้องการปรับปรุงแก้ไข อุปกรณ์ทางไอทีแบบอื่นๆ (เช่น Printer, Handheld, Wireless, Switch ฯลฯ)</label>
                     
                         <p class="requiredText" id="check1" <?= $error_check1 ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> กรุณากรอกฟอร์มที่กำหนดให้ครบทุกช่อง</p>
@@ -355,18 +351,18 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                         <hr style="margin:25px 0; border: 1px solid #e2e8f0">
 
                         <p style="margin: 0;"><span style="color: red;">* </span><b style="font-weight: bold;">ขอดำเนินการเพื่อ:</b></p>
-                        <input type="checkbox" id="ReInstall" name="ReInstall" value="1" <?php echo (!empty($editReport['ReInstall']) && $editReport['ReInstall'] === true) ? 'checked' : ''; ?>>
+                        <input type="checkbox" id="ReInstall" name="ReInstall" value="1" <?php echo (!empty($editReport['ReInstall']) && $editReport['ReInstall'] == 1) ? 'checked' : ''; ?>>
                         <label for="ReInstall">ถอนหรือติดตั้งโปรแกรมใหม่</label><br>
-                        <input type="checkbox" id="Broken" name="Broken" value="1" <?php echo (!empty($editReport['Broken']) && $editReport['Broken'] === true) ? 'checked' : ''; ?>>
+                        <input type="checkbox" id="Broken" name="Broken" value="1" <?php echo (!empty($editReport['Broken']) && $editReport['Broken'] == 1) ? 'checked' : ''; ?>>
                         <label for="Broken">อุปกรณ์ใช้งานไม่ได้ ชำรุด เสียหาย</label><br>
                         <div id="ETCBox">
                             <div id="ETCBoxLeft">
-                                <input type="checkbox" id="ETC" name="ETC" onchange="UnlockFormETC()" value="1" <?php echo (!empty($editReport['ETC']) && $editReport['ETC'] === true) ? 'checked' : ''; ?>>
+                                <input type="checkbox" id="ETC" name="ETC" onchange="UnlockFormETC()" value="1" <?php echo (!empty($editReport['ETC']) && $editReport['ETC'] == 1) ? 'checked' : ''; ?>>
                                 <label for="ETC"> อื่นๆ (ระบุ) </label>
                             </div>
                             <div id="ETCBoxRight">
                                 <input type="text" id="ETCText" name="ETCText" class="limit-width" value="<?php echo htmlspecialchars($editReport['ETCText'] ?? ''); ?>"
-                                <?php echo (!empty($editReport['ETC']) && $editReport['ETC'] === true) ? '' : 'disabled'; ?> >
+                                <?php echo (!empty($editReport['ETC']) && $editReport['ETC'] == 1) ? '' : 'disabled'; ?> >
                             </div>
                         </div>
                         <p class="requiredText" id="check2" <?= $error_check2 ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> กรุณากรอกฟอร์มที่กำหนดให้ครบทุกช่อง</p>
@@ -409,12 +405,12 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                                     $useSig = $editReport['UseSignature'] ?? false;
                                     $hasSig = !empty($editReport['Signature']) || !empty($user['Signature']);
                                 ?>
-                                <input type="radio" id="useName" name="signature" value="useName" <?php if (!$useSig || !$hasSig) echo 'checked'; ?>>
+                                <input type="radio" id="useName" name="signature" value="useName" <?php if (!$useSig || ($useSig && !$hasSig)) echo 'checked'; ?>>
                                 <label for="useName">ใช้ชื่อจริงในการเซ็นเอกสาร: <?php echo htmlspecialchars($editUser['Firstname'] ?? $user['Firstname'] ?? 'ไม่มีชื่อผู้ใช้'); ?></label><br>
-                                <input type="radio" id="useSignature" name="signature" value="useSignature" <?php echo (!$hasSig) ? 'disabled' : ''; ?> <?php echo ($hasSig) ? 'checked' : ''; ?> >
+                                <input type="radio" id="useSignature" name="signature" value="useSignature" <?php echo (!$hasSig) ? 'disabled' : ''; ?> <?php if ($useSig && $hasSig) echo 'checked'; ?> >
                                 <label for="useSignature" id="useSignatureLabel">ใช้ลายเซ็นในการเซ็นเอกสาร:
                                 <?php if ($hasSig): ?>
-                                    <img src="<?= blob_to_data_uri($user['Signature'] ?? $editReport['Signature'] ?? null, $user['SignatureMime'] ?? $editReport['SignatureMime'] ?? null) ?>" style="max-height: 80px;">
+                                    <img src="<?= blob_to_data_uri($user['Signature'] ?? $editReport['Signature'] ?? null, $user['SignatureMime'] ?? $editReport['SignatureMime'] ?? null) ?>" style="max-height: 80px; max-width: 250px;">
                                 <?php endif ?>
                                  </label>
                                 <p class="requiredText" id="check3" <?= $error_check3 ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> กรุณากรอกฟอร์มที่กำหนดให้ครบทุกช่อง</p>
@@ -428,6 +424,10 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                                     <button type="button" value="Cancel" class="FormConfirmButton" id="cancelButton" onclick="ClearForm()">
                                         <i class="fa-solid fa-circle-xmark FormConfirmIcon"></i>
                                         <p class="FormConfirmLabel">ล้างข้อมูล</p>
+                                    </button>
+                                    <button type="button" value="Home" class="FormConfirmButton" id="homeButton" onclick="window.location.href='Home.php'">
+                                        <i class="fa-solid fa-house FormConfirmIcon"></i>
+                                        <p class="FormConfirmLabel">กลับหน้าหลัก</p>
                                     </button>
                                 <?php endif; ?>  
                                 <?php if ($get_form_id): // หรือถ้ามี ID ส่งมา (โหมดแก้ไข) คุณอาจจะโชว์ปุ่ม "อัปเดต" แทน ?>

@@ -18,10 +18,12 @@ usort($history, function($a, $b) {
         'WaitForApproval'    => 1,
         'WaitForConfirm'     => 2,
         'WaitForFixing'      => 3,
-        'FormCreated'        => 4,
-        'Complete'           => 5,
-        'HoD_Denied'         => 6,
-        'IT_Director_Denied' => 7,
+        'WaitForFinalize'    => 4,
+        'Fixed_Denied'       => 5,
+        'FormCreated'        => 6,
+        'Complete'           => 7,
+        'HoD_Denied'         => 8,
+        'IT_Director_Denied' => 9,
     ];
 
     // ดึงค่าลำดับ ถ้าไม่มีในลิสต์ให้เป็น 99 (อยู่ล่างสุด)
@@ -113,6 +115,8 @@ foreach($history as $his){
                                         <?php if($h['FormStatus'] == 'WaitForApproval'): ?><div class="status statusYellow">รออนุมัติจากหัวหน้าแผนก</div>
                                         <?php elseif($h['FormStatus'] == 'WaitForConfirm'): ?><div class="status statusYellow">รออนุมัติจากหัวหน้าไอที</div>
                                         <?php elseif($h['FormStatus'] == 'WaitForFixing'): ?><div class="status statusYellow">รอการซ่อมแซม</div>
+                                        <?php elseif($h['FormStatus'] == 'WaitForFinalize'): ?><div class="status statusYellow">รออนุมัติการซ่อมแซม</div>
+                                        <?php elseif($h['FormStatus'] == 'Fixed_Denied'): ?><div class="status statusRed">การซ่อมแซมไม่อนุมัติ</div>
                                         <?php elseif($h['FormStatus'] == 'HoD_Denied'): ?><div class="status statusRed">หัวหน้าแผนกไม่อนุมัติ</div>
                                         <?php elseif($h['FormStatus'] == 'IT_Director_Denied'): ?><div class="status statusRed">หัวหน้าไอทีไม่อนุมัติ</div>
                                         <?php elseif($h['FormStatus'] == 'Complete'): ?><div class="status statusGreen">เสร็จสิ้น</div>

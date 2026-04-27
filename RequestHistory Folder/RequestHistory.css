@@ -32,7 +32,7 @@ html, body{
     background-color: var(--bg);
 }
 
-#mainSection{max-width: 850px; margin: 0 auto;}
+#mainSection{max-width: 1150px; margin: 0 auto;}
 .mainContainer{padding: 30px 0;}
 .itemContainer{
     background-color: white;
@@ -119,7 +119,7 @@ input:disabled{background: var(--disable); cursor: not-allowed;}
 
 .dateCol{min-width: 100px;}
 .fixCol{min-width: 285px;}
-.topicCol{min-width: 245px;}
+.topicCol{min-width: 245px; max-width: 245px; overflow-wrap: break-word;}
 .statusCol{min-width: 135px;}
 .buttonCol{min-width: 135px;}
 .searchBtn{justify-content: center; align-items: center;}
@@ -179,9 +179,10 @@ input:disabled{background: var(--disable); cursor: not-allowed;}
 .infoButton i, .infoButton p {color: white;}
 .infoButton:hover{border: 1px solid var(--darkinfo); background-color: var(--darkinfo);}
 
-
+@media screen and (max-width: 1210px) {
+    .mainContainer{padding: 30px;}
+}
 @media screen and (max-width: 875px){
-    .mainContainer{padding: 20px;}
     #header{flex-direction: column;}
     #headerText{margin: 0 0 10px 0;}
     #searchBox{width: 100%;}

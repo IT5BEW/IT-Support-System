@@ -15,6 +15,8 @@
     --darkorange: #e67e22;
     --gray: #94A3B8;
     --darkgray:	#64748B;
+    --blue: #0062FF;
+    --darkblue: #004DC7;
 }
 
 *{
@@ -165,24 +167,21 @@ input[type="radio"]:checked::before {
 
 .FormFooterContainer{display:flex; margin-top: 30px;}
 
-.FormConfirmLeftItem{width: 75%;}
-.FormConfirmRightItem{display: flex; margin: auto 0 0 auto;}
+.FormConfirmLeftItem{width: 65%;}
+.FormConfirmRightItem{display: flex; flex-direction: column; width: 35%; gap: 10px; justify-content: end;}
 #useSignatureLabel{display: inline-flex;}
 
 .FormConfirmButton{
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 80px;
-    width: 100px;
-    margin: 0 0 0 20px;
+    width: 100%;
     border: none;
     border-radius: 10px;
     cursor: pointer;
 }
-.FormConfirmIcon{font-size: 30px; padding: 5px;}
-.FormConfirmLabel{font-size: 18px; margin: 0;}
+.FormConfirmIcon{font-size: x-large; padding: 5px;}
+.FormConfirmLabel{font-size: large; margin: 0;}
 
 #submitButton{border: 1px solid var(--green); background-color: var(--green); cursor: pointer;}
 #submitButton i, #submitButton p {color: white;}
@@ -200,9 +199,9 @@ input[type="radio"]:checked::before {
 #backButton i, #backButton p {color: white;}
 #backButton:hover{border: 1px solid var(--darkgray); background-color: var(--darkgray);}
 
-/* #downloadButton{border: 1px solid var(--blue); background-color: var(--blue); cursor: pointer;}
-#downloadButton i, #downloadButton p {color: white;}
-#downloadButton:hover{border: 1px solid var(--darkblue); background-color: var(--darkblue);} */
+#homeButton{border: 1px solid var(--blue); background-color: var(--blue); cursor: pointer;}
+#homeButton i, #homeButton p {color: white;}
+#homeButton:hover{border: 1px solid var(--darkblue); background-color: var(--darkblue);}
 
 .previewImage{
     max-height: 600px;
@@ -250,7 +249,7 @@ input[type="radio"]:checked::before {
     .FormFooterContainer{flex-direction: column;}
     .FormConfirmLeftItem{width: 100%;}
     .FormConfirmRightItem{width: 100%; flex-direction: column;}
-    .FormConfirmButton{width: 100%; margin: 0; height: auto;  flex-direction: row; margin: 10px auto 0px; padding: 5px;}
+    .FormConfirmButton{height: auto; padding: 5px;}
     .FormConfirmIcon{font-size: large;}
     .FormConfirmLabel{font-size: 18px;}
     .requiredText{font-size: 14px;}

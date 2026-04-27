@@ -228,22 +228,26 @@ function uploadImageToForm(string $form_id, array $file, string $image_col, stri
 
 // copy ลายเซ็นจาก Users ไปเก็บใน RequestForm ณ เวลาที่ส่งฟอร์ม
 // (snapshot ลายเซ็น เผื่อ user เปลี่ยนลายเซ็นทีหลัง ฟอร์มเก่ายังถูกต้อง)
-function getImageFromUrlAndUploadToForm(string $form_id, string $user_id, string $col_prefix = 'Signature'): array {
+function getBinaryImageAndUploadToForm(string $form_id, string $user_id, string $col_prefix = 'Signature'): array {
     $image_col = $col_prefix;
     $mime_col  = $col_prefix . 'Mime';
 
-    // ดึง BLOB ลายเซ็นของ user จาก DB โดยตรง
-    $rows = db_query(
-        'SELECT [Signature], [SignatureMime] FROM [Users] WHERE [User_ID] = :id',
-        [':id' => $user_id]
-    );
+    // 1. ดึงข้อมูลแบบไม่ผ่าน db_query (เพื่อเลี่ยง CAST AS NVARCHAR)
+    $db = get_db();
+    $stmt = $db->prepare("SELECT [Signature], [SignatureMime] FROM [Users] WHERE [User_ID] = ?");
+    $stmt->execute([$user_id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (empty($rows) || empty($rows[0]['Signature'])) {
+    if (!$row || empty($row['Signature'])) {
         return ['success' => false, 'error_msg' => 'ไม่พบลายเซ็นของผู้ใช้'];
     }
 
-    $blob = $rows[0]['Signature'];
-    $mime = $rows[0]['SignatureMime'];
+    $blob = $row['Signature'];
+    $mime = $row['SignatureMime'];
+
+    if (is_string($blob) && preg_match('/^[0-9a-fA-F]+$/', str_replace('0x', '', $blob))) {
+        $blob = hex2bin(str_replace('0x', '', $blob));
+    }
 
     $ok = db_update('RequestForm',
         [$image_col => $blob, $mime_col => $mime],
