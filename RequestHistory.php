@@ -141,6 +141,10 @@ foreach($history as $his){
                             <?php endforeach; ?>
                         </table>
                     </div>
+                    <button type="button" value="Home" class="button" id="homeButton" onclick="window.location.href='Home.php'" style="margin-top: 25px;">
+                        <i class="fa-solid fa-house FormConfirmIcon"></i>
+                        <p class="FormConfirmLabel">กลับหน้าหลัก</p>
+                    </button>
                 </div>
             </div>
         </div>

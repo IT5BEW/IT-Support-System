@@ -8,6 +8,8 @@
     --darkblue: #2980b9;
     --green: #2ecc71;
     --darkgreen: #27ae60;
+    --home: #0062FF;
+    --darkhome: #004DC7;
 }
 
 *{
@@ -170,6 +172,9 @@ input[type="radio"]:checked::before {
 #computerCreateButton{border: 1px solid var(--green); background-color: var(--green); cursor: pointer;}
 #computerCreateButton i, #computerCreateButton p {color: white;}
 #computerCreateButton:hover{border: 1px solid var(--darkgreen); background-color: var(--darkgreen);}
+#homeButton{border: 1px solid var(--home); background-color: var(--home); cursor: pointer;}
+#homeButton i, #homeButton p {color: white;}
+#homeButton:hover{border: 1px solid var(--darkhome); background-color: var(--darkhome);}
 
 @media screen and (max-width: 875px){
     .mainContainer{padding: 20px;}

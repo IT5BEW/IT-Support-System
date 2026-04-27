@@ -563,6 +563,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <p class="buttonLabel">สร้างผู้ใช้งานใหม่</p>
                         </button>
                     </form>
+
+                    <button type="button" value="Home" class="button" id="homeButton" name="home" onclick="window.location.href='Home.php'">
+                        <i class="fa-solid fa-house FormConfirmIcon"></i>
+                        <p class="buttonLabel">กลับหน้าหลัก</p>
+                    </button>
                 </div>
             </div>
         </section>

@@ -20,6 +20,8 @@
     --darkedit: #e67e22;
     --info: #94A3B8;
     --darkinfo:	#64748B;
+    --home: #0062FF;
+    --darkhome: #004DC7;
 }
 
 *{
@@ -178,6 +180,11 @@ input:disabled{background: var(--disable); cursor: not-allowed;}
 .infoButton{border: 1px solid var(--info); background-color: var(--info); cursor: pointer;}
 .infoButton i, .infoButton p {color: white;}
 .infoButton:hover{border: 1px solid var(--darkinfo); background-color: var(--darkinfo);}
+
+#homeButton{border: 1px solid var(--home); background-color: var(--home); cursor: pointer; padding: 10px;}
+#homeButton i {color: white; font-size: x-large;}
+#homeButton p {color: white; font-size: large; margin: 5px 0;}
+#homeButton:hover{border: 1px solid var(--darkhome); background-color: var(--darkhome);}
 
 @media screen and (max-width: 1210px) {
     .mainContainer{padding: 30px;}

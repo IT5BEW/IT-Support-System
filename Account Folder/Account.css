@@ -17,6 +17,8 @@
     --darkgray: #2c3e50;
     --red: #ef4444;
     --darkred: #dc2626;
+    --home: #0062FF;
+    --darkhome: #004DC7;
 }
 
 *{
@@ -120,7 +122,9 @@ html, body{
 #editUserIDButton{border: 1px solid var(--gray); background-color: var(--gray); cursor: pointer;}
 #editUserIDButton i, #editUserIDButton p {color: white;}
 #editUserIDButton:hover{border: 1px solid var(--darkgray); background-color: var(--darkgray);}
-
+#homeButton{border: 1px solid var(--home); background-color: var(--home); cursor: pointer;}
+#homeButton i, #homeButton p {color: white;}
+#homeButton:hover{border: 1px solid var(--darkhome); background-color: var(--darkhome);}
 
 input, select, textarea{
     font-size: 18px; 
