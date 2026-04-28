@@ -62,6 +62,9 @@ $user = (!empty($data)) ? $data[0] : null;
                         <a href="IT Request Form" style="text-decoration: none;"><button class="button" id="report"><i class="fa-regular fa-file-lines"></i>ใบแจ้งซ่อม</button></a>        
                         <a href="RequestHistory" style="text-decoration: none;"><button class="button" id="history"><i class="fa-solid fa-clock"></i>ประวัติการแจ้งซ่อม</button></a>
                         <a href="Account" style="text-decoration: none;"><button class="button" id="account"><i class="fa-solid fa-user"></i>แก้ไขข้อมูล<br>ผู้ใช้</button></a>
+                        <?php if ($user['Role'] == 'HoD'): ?>
+                            <a href="RequestApproving" style="text-decoration: none;"><button class="button" id="approve"><i class="fa-solid fa-file-circle-check"></i>ยืนยัน<br>การร้องขอ</button></a>
+                        <?php endif; ?>
                         <?php if ($user['Role'] == 'IT' || $user['Role'] == 'IT_Director'): ?>
                             <a href="Computer" style="text-decoration: none;"><button class="button" id="pc"><i class="fa-solid fa-computer"></i>แก้ไขข้อมูล<br>คอมพิวเตอร์</button></a>
                         <?php endif; ?>

@@ -9,7 +9,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 }
 $logged_user  = $_SESSION['user_id'];
 // lookup UID จาก User_ID ก่อน แล้วค่อย query RequestForm
-$userData = db_query('SELECT [UID] FROM [Users] WHERE [User_ID] = :id', [':id' => $logged_user]);
+$userData = db_query('SELECT * FROM [Users] WHERE [User_ID] = :id', [':id' => $logged_user]);
+$user = (!empty($userData)) ? $userData[0] : null;
 $uid = !empty($userData) ? $userData[0]['UID'] : null;
 $history = $uid ? db_query('SELECT * FROM [RequestForm] WHERE [UID] = :uid ORDER BY [Date] DESC', [':uid' => $uid]) : [];
 usort($history, function($a, $b) {

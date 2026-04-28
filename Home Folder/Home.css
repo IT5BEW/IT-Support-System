@@ -16,6 +16,8 @@
     --fixHover: #7C3AED;
     --pc: #334155;
     --pcHover: #1E293B;
+    --confirm: #059669;
+    --confirmHover: #047857;
     --finalize: #047857;
     --finalizeHover: #065F46;
 }
@@ -116,6 +118,8 @@ html, body{
 #exit:hover{background-color: var(--exitHover); border: 1px solid var var(--exitHover);}
 #pc{background-color: var(--pc); border: 1px solid var(--pc);}
 #pc:hover{background-color: var(--pcHover); border: 1px solid var var(--pcHover);}
+#approve{background-color: var(--approve); border: 1px solid var(--approve);}
+#approve:hover{background-color: var(--approveHover); border: 1px solid var var(--approveHover);}
 
 @media screen and (max-width: 875px){
     .mainContainer{padding: 20px;}

@@ -134,7 +134,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $etctext   = $_POST['ETCText'] ?? '';
         $cause1    = $_POST['cause1'] ?? '';
         $cause2    = $_POST['cause2'] ?? '';
-        $cause3    = $_POST['cause3'] ?? ''; // รับมาเพื่อเช็ค mismatch
+        $cause3    = $_POST['cause3'] ?? '';
         $signature = $_POST['signature'] ?? '';
         $detailImage = $_FILES['detailImage'] ?? null;
 
@@ -411,7 +411,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
                                 ?>
                                 <input type="radio" id="useName" name="signature" value="useName" <?php if (!$useSig || ($useSig && !$hasSig)) echo 'checked'; ?>>
                                 <label for="useName">ใช้ชื่อจริงในการเซ็นเอกสาร: <?php echo htmlspecialchars($editUser['Firstname'] ?? $user['Firstname'] ?? 'ไม่มีชื่อผู้ใช้'); ?></label><br>
-                                <input type="radio" id="useSignature" name="signature" value="useSignature" <?php echo (!$hasSig) ? 'disabled' : ''; ?> <?php if ($useSig && $hasSig) echo 'checked'; ?> >
+                                <input type="radio" id="useSignature" name="signature" value="useSignature" <?php echo (!$hasSig) ? 'disabled' : ''; ?> <?php if ($hasSig) echo 'checked'; ?> >
                                 <label for="useSignature" id="useSignatureLabel">ใช้ลายเซ็นในการเซ็นเอกสาร:
                                 <?php if ($hasSig): ?>
                                     <img src="<?= blob_to_data_uri($user['Signature'] ?? $editReport['Signature'] ?? null, $user['SignatureMime'] ?? $editReport['SignatureMime'] ?? null) ?>" style="max-height: 80px; max-width: 250px;">

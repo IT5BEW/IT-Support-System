@@ -22,11 +22,18 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             header("Location: RequestHistory.php"); 
             exit();
         }
-        $userData = db_query('SELECT [Firstname], [Section] FROM [Users] WHERE [UID] = :id', [':id' => $detailReport['UID']]) ?? [];
+        $userData = db_query('SELECT [Firstname], [Lastname], [Section] FROM [Users] WHERE [UID] = :id', [':id' => $detailReport['UID']]) ?? [];
         $detailUser = (!empty($userData)) ? $userData[0] : null;
 
         $compData = db_query('SELECT [Equipment_ID], [ComName] FROM [Computer] WHERE [CID] = :id', [':id' => $detailReport['CID']]) ?? [];
         $detailComp = (!empty($compData)) ? $compData[0] : null;
+
+        $approveData = db_query('SELECT * FROM [DepartmentHeadApproveForm] WHERE [Form_ID] = :id', [':id' => $get_form_id]) ?? [];
+        $detailApprove = (!empty($approveData)) ? $approveData[0] : null;
+        if ($detailApprove) {
+            $approveUser = db_query('SELECT [Firstname], [Lastname] FROM [Users] WHERE [UID] = :id', [':id' => $detailApprove['UID']]) ?? [];
+            $detailApproveUser = (!empty($approveUser)) ? $approveUser[0] : null;
+        }
     }
 }
 
@@ -107,7 +114,7 @@ function getStepClass($stepNumber, $currentStatus) {
                                     <ul style="margin: 0 0 10px;">
                                         <li>Equipment ID: <?php echo $detailComp['Equipment_ID'] ?? 'ไม่มีคอมพิวเตอร์'; ?></li>
                                         <li>Com. Name: <?php echo $detailComp['ComName'] ?? 'ไม่มีชื่อคอมพิวเตอร์'; ?></li>
-                                        <li>User: <?php echo $detailUser['Firstname'] ?? 'ไม่มีชื่อผู้ใช้'; ?></li>
+                                        <li>User: <?php echo ($detailUser['Firstname'] ?? 'ไม่มีชื่อผู้ใช้') . ' ' . ($detailUser['Lastname'] ?? 'ไม่มีนามสกุล'); ?></li>
                                         <li>Section: <?php echo $detailReport['Section'] ?? 'ไม่มีแผนก'; ?></li>
                                     </ul>
                                     <p style="margin: 0;"><b style="font-weight: bold;">หัวข้อที่ต้องการปรับปรุงแก้ไข:</b></p>
@@ -121,27 +128,41 @@ function getStepClass($stepNumber, $currentStatus) {
                                         <?php if($detailReport['Broken']): ?><li>อุปกรณ์ใช้งานไม่ได้ ชำรุด เสียหาย</li><?php endif ?>
                                         <?php if($detailReport['ETC']): ?><li><?php echo $detailReport['ETCText'] ?><?php endif ?>
                                     </ul>
+                                    <p style="margin: 0;"><b style="font-weight: bold;">เหตุผล:</b></p>
+                                    <p style="margin: 0 0 10px;">
+                                        <ul style="margin: 0 0 10px;">
+                                            <li>
+                                                <?php if(empty($detailReport['CauseText1']) && empty($detailReport['CauseText2']) && empty($detailReport['CauseText3'])): ?>
+                                                    ไม่มีเหตุผลเพิ่มเติม
+                                                <?php else: ?>
+                                                    <?php echo $detailReport['CauseText1'] ?? ''; ?>
+                                                    <?php echo $detailReport['CauseText2'] ?? ''; ?>
+                                                    <?php echo $detailReport['CauseText3'] ?? ''; ?>
+                                                <?php endif ?>
+                                            </li>
+                                        </ul>
+                                    </p>
                                 </div>
                             </div>
                             
                             <div class="FormInfoRight">
                                 <div class="FormInfoItem">
-                                    <p style="margin: 0;"><b style="font-weight: bold;">เหตุผล:</b></p>
-                                    <p style="margin: 0 0 10px;">
-                                        <?php if(empty($detailReport['CauseText1']) && empty($detailReport['CauseText2']) && empty($detailReport['CauseText3'])): ?>
-                                            ไม่มีเหตุผลเพิ่มเติม
-                                        <?php else: ?>
-                                            <?php echo $detailReport['CauseText1'] ?? ''; ?>
-                                            <?php echo $detailReport['CauseText2'] ?? ''; ?>
-                                            <?php echo $detailReport['CauseText3'] ?? ''; ?>
-                                        <?php endif ?>
-                                    </p>
                                     <p style="margin: 0;"><b style="font-weight: bold;">ภาพประกอบ:</b></p>
                                     <div style="width: 100%;">
                                         <?php if (!empty($detailReport['DetailedImage'])): ?>
-                                            <img src="<?= blob_to_data_uri($detailReport['DetailedImage'] ?? null, $detailReport['DetailedImageMime'] ?? null) ?>" alt="placeholder" style="object-fit: contain; width: 100%; height: 100%;">
+                                            <img src="<?= blob_to_data_uri($detailReport['DetailedImage'] ?? null, $detailReport['DetailedImageMime'] ?? null) ?>" alt="Detailed Image" style="object-fit: contain; width: 100%; height: 100%;">
                                         <?php else: ?>
                                             <p style="margin: 0 0 10px;">ไม่มีภาพประกอบ</p>
+                                        <?php endif ?>
+                                    </div>.
+                                    <p style="margin: 0;"><b style="font-weight: bold;">ลายเซ็น:</b></p>
+                                    <div style="width: 100%;">
+                                        <?php if ($detailReport['UseSignature'] && !empty($detailReport['Signature'])): ?>
+                                            <img src="<?= blob_to_data_uri($detailReport['Signature'] ?? null, $detailReport['SignatureMime'] ?? null) ?>" alt="Signature Image" style="object-fit: contain; max-width: 250px; max-height: 80px;">
+                                        <?php else: ?>
+                                            <ul style="margin: 0 0 10px;">
+                                                <li>ใช้ชื่อจริง: <?php echo ($detailUser['Firstname'] ?? 'ไม่มีชื่อผู้ใช้') . ' ' . ($detailUser['Lastname'] ?? 'ไม่มีนามสกุล'); ?></li>
+                                            </ul>
                                         <?php endif ?>
                                     </div>
                                 </div>
@@ -156,12 +177,16 @@ function getStepClass($stepNumber, $currentStatus) {
                             <div class="FormInfoLeft item">
                                 <h2 style="font-weight: bold; margin:0 0 10px;">2. การอนุมัติจาก<span style="white-space: nowrap; font-weight: bold;">หัวหน้าแผนก</span></h2>
                                 <div class="FormInfoItem">
-                                    <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดการอนุมัติ:</b></p>
-                                    <ul style="margin: 0;">
-                                        <li>ผู้อนุมัติ: ทดสอบ</li>
-                                        <li>สถานะ: ทดสอบ</li>
-                                        <li>วันที่: ทดสอบ</li>
-                                    </ul>
+                                    <?php if ($currentStatus !== 'WaitForApproval'): ?>
+                                        <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดการอนุมัติ:</b></p>
+                                        <ul style="margin: 0;">
+                                            <li>ผู้อนุมัติ: <?=$detailApproveUser ? $detailApproveUser['Firstname'] . ' ' . $detailApproveUser['Lastname'] : 'ไม่ทราบ'?></li>
+                                            <li>สถานะ: <?=$detailApprove['IsApproved'] ? 'อนุมัติ' : 'ไม่อนุมัติ'?></li>
+                                            <li>วันที่: <?= $detailApprove['ApproveDate'] ?? 'ไม่ทราบ' ?></li>
+                                        </ul>
+                                    <?php else: ?>
+                                        <i class="fa-solid fa-circle-info"></i> รอการอนุมัติจากหัวหน้าแผนก
+                                    <?php endif ?>
                                 </div>
                             </div>
                         
@@ -170,9 +195,7 @@ function getStepClass($stepNumber, $currentStatus) {
                                 <div class="FormInfoItem">
                                     <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดการอนุมัติ:</b></p>
                                     <ul style="margin: 0;">
-                                        <li>ผู้อนุมัติ: ทดสอบ</li>
-                                        <li>สถานะ: ทดสอบ</li>
-                                        <li>วันที่: ทดสอบ</li>
+                                        <li>กำลังทำเว็บอยู่ครับ</li>
                                     </ul>
                                 </div>
                             </div>
@@ -185,9 +208,9 @@ function getStepClass($stepNumber, $currentStatus) {
                     </div>
 
                     <div style="display: flex; gap: 15px;">
-                        <button type="button" value="Home" class="button" id="backButton" onclick="window.location.href='RequestHistory.php'" style="margin-top: 25px;">
+                        <button type="button" value="Back" class="button" id="backButton" onclick="history.back()" style="margin-top: 25px;">
                             <i class="fa-solid fa-arrow-left FormConfirmIcon"></i>
-                            <p class="FormConfirmLabel">กลับหน้าประวัติ</p>
+                            <p class="FormConfirmLabel">กลับไป</p>
                         </button>
                         <button type="button" value="Home" class="button" id="homeButton" onclick="window.location.href='Home.php'" style="margin-top: 25px;">
                             <i class="fa-solid fa-house FormConfirmIcon"></i>

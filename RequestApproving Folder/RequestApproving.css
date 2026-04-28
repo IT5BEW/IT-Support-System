@@ -22,6 +22,10 @@
     --darkinfo:	#64748B;
     --home: #0062FF;
     --darkhome: #004DC7;
+    --cancle: #ef4444;
+    --darkcancle: #dc2626;
+    --confirm: #23C85F;
+    --darkconfirm: #16a34a;
 }
 
 *{
@@ -34,7 +38,7 @@ html, body{
     background-color: var(--bg);
 }
 
-#mainSection{max-width: 1150px; margin: 0 auto;}
+#mainSection{max-width: 1300px; margin: 0 auto;}
 .mainContainer{padding: 30px 0;}
 .itemContainer{
     background-color: white;
@@ -120,9 +124,11 @@ input:disabled{background: var(--disable); cursor: not-allowed;}
 .ulTable li{padding: 0px;}
 
 .dateCol{min-width: 100px;  max-width: 100px;}
+.userCol{min-width: 150px; max-width: 150px; overflow-wrap: break-word;}
 .fixCol{min-width: 285px; max-width: 285px; overflow-wrap: break-word;}
 .topicCol{min-width: 245px; max-width: 245px; overflow-wrap: break-word;}
-.statusCol{min-width: 190px; max-width: 190px;}
+.statusCol{min-width: 100px; max-width: 100px;}
+.approveCol{min-width: 200px; max-width: 200px;}
 .buttonCol{min-width: 135px;  max-width: 135px;}
 .searchBtn{justify-content: center; align-items: center;}
 
@@ -168,25 +174,47 @@ input:disabled{background: var(--disable); cursor: not-allowed;}
     gap: 5px;
     padding: 5px;
 }
-.smallbutton i{
-    font-size: small;
-    align-self: center;
-}
+.smallbutton i{font-size: small; align-self: center;}
 .smallbuttonLabel{font-size: small; margin: 0;}
+
+.mediumbutton{
+    display: flex;
+    flex-direction: column;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    justify-content: center;
+    line-height: 20px;
+    gap: 5px;
+    padding: 5px;
+    height: 70px;
+    width: 70px;
+}
+.mediumbutton i{font-size: x-large; align-self: center;}
+.mediumbuttonLabel{font-size: medium; margin: 0;}
 
 .editButton{border: 1px solid var(--edit); background-color: var(--edit); cursor: pointer;}
 .editButton i, .editButton p {color: white;}
 .editButton:hover{border: 1px solid var(--darkedit); background-color: var(--darkedit);}
+.confirmButton{border: 1px solid var(--confirm); background-color: var(--confirm); cursor: pointer;}
+.confirmButton i, .confirmButton p {color: white;}
+.confirmButton:hover{border: 1px solid var(--darkconfirm); background-color: var(--darkconfirm);}
+.cancleButton{border: 1px solid var(--cancle); background-color: var(--cancle); cursor: pointer;}
+.cancleButton i, .cancleButton p {color: white;}
+.cancleButton:hover{border: 1px solid var(--darkcancle); background-color: var(--darkcancle);}
 .infoButton{border: 1px solid var(--info); background-color: var(--info); cursor: pointer;}
 .infoButton i, .infoButton p {color: white;}
 .infoButton:hover{border: 1px solid var(--darkinfo); background-color: var(--darkinfo);}
+.resetButton{border: 1px solid var(--edit); background-color: var(--edit); cursor: pointer; width: 120px;}
+.resetButton i, .resetButton p {color: white;}
+.resetButton:hover{border: 1px solid var(--darkedit); background-color: var(--darkedit);}
 
 #homeButton{border: 1px solid var(--home); background-color: var(--home); cursor: pointer; padding: 10px;}
 #homeButton i {color: white; font-size: x-large;}
 #homeButton p {color: white; font-size: large; margin: 5px 0;}
 #homeButton:hover{border: 1px solid var(--darkhome); background-color: var(--darkhome);}
 
-@media screen and (max-width: 1210px) {
+@media screen and (max-width: 1360px) {
     .mainContainer{padding: 30px;}
 }
 @media screen and (max-width: 875px){

@@ -9,12 +9,11 @@ Done:
  - Create / Edit Request Form
  - Change Signature file name when change User ID
  - View Request History
+ - HoD Approval
 --------------------------------------------
 In Progress:
- - Add Signature and Image to seperate folder
- - Find a way to remove
  - All information page
- - HoD Approval
  - IT Head Approval
  - IT Fix
+ - IT Head Finalize
 --------------------------------------------

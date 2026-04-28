@@ -81,10 +81,15 @@ function blob_to_data_uri(?string $blob, ?string $mime): ?string {
 // SELECT - คืน array of rows
 // ตัวอย่าง: db_query('SELECT * FROM [Users] WHERE [User_ID] = :id', [':id' => 'U001'])
 function db_query(string $sql, array $params = []): array {
-    // ODBC: แปลง :param -> CAST(:param AS NVARCHAR(500)) เพื่อแก้ type mismatch
-    $sql = preg_replace('/:(\w+)/', 'CAST(:$1 AS NVARCHAR(500))', $sql);
     $stmt = get_db()->prepare($sql);
-    $stmt->execute($params);
+    foreach ($params as $key => $val) {
+        if (is_null($val))    $type = PDO::PARAM_NULL;
+        elseif (is_bool($val)) $type = PDO::PARAM_INT;  // BIT
+        elseif (is_int($val))  $type = PDO::PARAM_INT;
+        else                   $type = PDO::PARAM_STR;
+        $stmt->bindValue($key, is_bool($val) ? (int)$val : $val, $type);
+    }
+    $stmt->execute();
     return $stmt->fetchAll();
 }
 
@@ -152,6 +157,28 @@ function db_update(string $table, array $data, array $where): bool {
     // bind WHERE values (ไม่มี BLOB ใน WHERE)
     foreach ($where as $val) {
         $stmt->bindValue($pos, $val, PDO::PARAM_STR);
+        $pos++;
+    }
+
+    return $stmt->execute();
+}
+
+function db_remove(string $table, array $where): bool {
+    $whereParts = array_map(fn($c) => "[$c] = ?", array_keys($where));
+
+    $sql = "DELETE FROM [$table] WHERE " . implode(' AND ', $whereParts);
+
+    $stmt = get_db()->prepare($sql);
+
+    $pos = 1;
+    foreach ($where as $col => $val) {
+        if (is_null($val)) {
+            $stmt->bindValue($pos, null, PDO::PARAM_NULL);
+        } elseif (is_int($val) || is_bool($val)) {
+            $stmt->bindValue($pos, (int)$val, PDO::PARAM_INT);
+        } else {
+            $stmt->bindValue($pos, $val, PDO::PARAM_STR);
+        }
         $pos++;
     }
 
