@@ -119,11 +119,11 @@ input:disabled{background: var(--disable); cursor: not-allowed;}
 .ulTable{margin: 0; padding-left: 20px;}
 .ulTable li{padding: 0px;}
 
-.dateCol{min-width: 100px;}
-.fixCol{min-width: 285px;}
+.dateCol{min-width: 100px;  max-width: 100px;}
+.fixCol{min-width: 285px; max-width: 285px; overflow-wrap: break-word;}
 .topicCol{min-width: 245px; max-width: 245px; overflow-wrap: break-word;}
-.statusCol{min-width: 135px;}
-.buttonCol{min-width: 135px;}
+.statusCol{min-width: 190px; max-width: 190px;}
+.buttonCol{min-width: 135px;  max-width: 135px;}
 .searchBtn{justify-content: center; align-items: center;}
 
 .status{

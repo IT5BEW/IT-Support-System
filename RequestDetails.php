@@ -184,10 +184,17 @@ function getStepClass($stepNumber, $currentStatus) {
                         <h2 style="font-weight: bold; margin:0 0 10px;">4. รายละเอียดการแก้ไข</h2>
                     </div>
 
-                    <button type="button" value="Home" class="button" id="homeButton" onclick="window.location.href='Home.php'" style="margin-top: 25px;">
-                        <i class="fa-solid fa-house FormConfirmIcon"></i>
-                        <p class="FormConfirmLabel">กลับหน้าหลัก</p>
-                    </button>
+                    <div style="display: flex; gap: 15px;">
+                        <button type="button" value="Home" class="button" id="backButton" onclick="window.location.href='RequestHistory.php'" style="margin-top: 25px;">
+                            <i class="fa-solid fa-arrow-left FormConfirmIcon"></i>
+                            <p class="FormConfirmLabel">กลับหน้าประวัติ</p>
+                        </button>
+                        <button type="button" value="Home" class="button" id="homeButton" onclick="window.location.href='Home.php'" style="margin-top: 25px;">
+                            <i class="fa-solid fa-house FormConfirmIcon"></i>
+                            <p class="FormConfirmLabel">กลับหน้าหลัก</p>
+                        </button>
+                    </div>
+
                 </div>
             </div>
         </section>

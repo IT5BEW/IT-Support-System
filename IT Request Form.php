@@ -272,6 +272,10 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             header("Location: " . strtok($_SERVER["REQUEST_URI"], '?')); 
             exit();
         }
+        if($editReport['FormStatus'] !== 'WaitForApproval'){
+            header("Location: RequestHistory.php"); 
+            exit();
+        }
         $userData = db_query('SELECT [Firstname], [Section] FROM [Users] WHERE [UID] = :uid', [':uid' => $editReport['UID']]) ?? [];
         $editUser = (!empty($userData)) ? $userData[0] : null;
 
