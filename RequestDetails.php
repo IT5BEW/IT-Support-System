@@ -203,10 +203,16 @@ function getStepClass($stepNumber, $currentStatus) {
                             <div class="FormInfoRight item">    
                                 <h2 style="font-weight: bold; margin:0 0 10px;">3. การอนุมัติจาก<span style="white-space: nowrap; font-weight: bold;">หัวหน้าฝ่ายไอที</span></h2>
                                 <div class="FormInfoItem">
-                                    <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดการอนุมัติ:</b></p>
-                                    <ul style="margin: 0;">
-                                        <li>กำลังทำเว็บอยู่ครับ</li>
-                                    </ul>
+                                    <?php if ($currentStatus == 'WaitForApproval'): ?>
+                                        <i class="fa-solid fa-circle-info"></i> รอการอนุมัติจากหัวหน้าแผนก
+                                    <?php elseif ($currentStatus == 'HoD_Denied'): ?>
+                                        <i class="fa-solid fa-circle-info"></i> การแจ้งซ่อมไม่ถูกอนุมัติจากหัวหน้าแผนก
+                                    <?php else: ?>
+                                        <p style="margin: 0;"><b style="font-weight: bold;">รายละเอียดการอนุมัติ:</b></p>
+                                        <ul style="margin: 0;">
+                                            <li>กำลังทำเว็บอยู่ครับ</li>
+                                        </ul>
+                                    <?php endif ?>
                                 </div>
                             </div>
                     </div>

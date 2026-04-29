@@ -187,21 +187,6 @@ async function CreateForm(data, fileName) {
     // Fill in Name Field
     if (data.UseSignature && data.Signature && data.Signature !== "") {
         handleSignature(data.Signature, data.SignatureMime, userSignatureField);
-        // try {
-        //     const sigBytes = base64ToUint8Array(data.Signature);
-        //     let embeddedSig;
-
-        //     // ตรวจสอบ Mime Type เพื่อเลือกฟังก์ชันที่ถูกต้อง
-        //     if (data.SignatureMime === 'image/png') {embeddedSig = await pdfDoc.embedPng(sigBytes);} 
-        //     else if (data.SignatureMime === 'image/jpeg' || data.SignatureMime === 'image/jpg') {embeddedSig = await pdfDoc.embedJpg(sigBytes);} 
-        //     else {embeddedSig = await pdfDoc.embedPng(sigBytes);}
-            
-        //     if (userSignatureField) {userSignatureField.setImage(embeddedSig);}
-        // } 
-        // catch (error) {
-        //     console.error("Signature Error:", error);
-        //     fields.userName.setText(data.User || "");
-        // }
     } 
     else {
         if (fields.userName) {fields.userName.setText(data.User || "");}
@@ -211,12 +196,6 @@ async function CreateForm(data, fileName) {
 
     // Fill in Date
     handleDate(data.Date, fields.dayCreate, fields.monthCreate, fields.yearCreate);
-    // const date = new Date(data.Date);
-    // const result = date.toLocaleDateString('th-TH', {year: 'numeric',month: 'short',day: 'numeric',})
-    // const splitDate = result.split(' ')
-    // fields.dayCreate.setText(splitDate[0])
-    // fields.monthCreate.setText(splitDate[1])
-    // fields.yearCreate.setText(splitDate[2])
 
 // Approver Section
     if (data.ApproveStatus) {
