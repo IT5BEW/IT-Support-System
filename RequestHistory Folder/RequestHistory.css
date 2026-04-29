@@ -91,6 +91,7 @@ input:disabled{background: var(--disable); cursor: not-allowed;}
 #tableContainer{
     max-height: 400px; /* ความสูงหน้าประวัติ */
     overflow-y: auto;
+    scrollbar-gutter: stable;
     border: 1px solid var(--border);
     border-radius: 10px;
 }

@@ -95,21 +95,22 @@ input:disabled{background: var(--disable); cursor: not-allowed;}
 #tableContainer{
     max-height: 400px; /* ความสูงหน้าประวัติ */
     overflow-y: auto;
+    scrollbar-gutter: stable;
     border: 1px solid var(--border);
     border-radius: 10px;
 }
-#historyTable{
+#approvingTable{
     border-collapse: collapse;
     width: 100%;
 }
-#historyTable th, #historyTable td {
+#approvingTable th, #approvingTable td {
     padding: 12px;
     border-left: 1px solid var(--border); 
 }
-#historyTable td {
+#approvingTable td {
     border-top: 1px solid var(--border);
 }
-#historyTable th{
+#approvingTable th{
     position: sticky;
     top: 0;
     background: #E1EDFA;
@@ -117,8 +118,8 @@ input:disabled{background: var(--disable); cursor: not-allowed;}
     /* cursor: pointer; */
     z-index: 5;
 }
-#historyTable th:first-child, #historyTable td:first-child {border-left: none; }
-#historyTable tr:first-child{border-top: none;}
+#approvingTable th:first-child, #approvingTable td:first-child {border-left: none; }
+#approvingTable tr:first-child{border-top: none;}
 
 .ulTable{margin: 0; padding-left: 20px;}
 .ulTable li{padding: 0px;}

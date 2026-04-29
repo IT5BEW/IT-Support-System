@@ -2,7 +2,7 @@ function searchTable() {
     var input, filter, table, tr, td, i, j, txtValue;
     input = document.getElementById("searchInput");
     filter = input.value.toUpperCase();
-    table = document.getElementById("historyTable");
+    table = document.getElementById("approvingTable");
     tr = table.getElementsByTagName("tr");
 
     // วนลูปดูทุกแถว (เริ่มที่ 1 เพราะ 0 คือหัวตาราง)
@@ -24,12 +24,11 @@ function searchTable() {
 }
 
 function filterStatus(status) {
-    var table = document.getElementById("historyTable");
+    var table = document.getElementById("approvingTable");
     var tr = table.getElementsByTagName("tr");
 
     for (var i = 1; i < tr.length; i++) {
-        // คอลัมน์สถานะคือ td ตัวที่ 4 (index 3)
-        var td = tr[i].getElementsByTagName("td")[3]; 
+        var td = tr[i].getElementsByTagName("td")[4]; 
         if (td) {
             var txtValue = td.textContent || td.innerText;
             

@@ -57,11 +57,17 @@ foreach($approving as $apv){
 if ($_SERVER["REQUEST_METHOD"] == "POST") { 
     if (isset($_POST['ApproveForm'])) {
         $Form_ID    = $_POST['form_id'] ?? '';
+
+        $blob = $user['Signature'] ?? '';
+        if (is_string($blob) && preg_match('/^[0-9a-fA-F]+$/', str_replace('0x', '', $blob))) {
+            $blob = hex2bin(str_replace('0x', '', $blob));
+        }
+
         $data = [
             'Form_ID' => $Form_ID,
             'UID'     => $user['UID'] ?? '',
             'ApproveDate'    => date('Y-m-d'),
-            'Signature' => $user['Signature'] ?? '',
+            'Signature' => $blob ?? '',
             'SignatureMime' => $user['SignatureMime'] ?? '',
             'IsApproved' => 1,
         ];
@@ -83,11 +89,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (isset($_POST['DenyForm'])) {
         $Form_ID    = $_POST['form_id'] ?? '';
+        
+        $blob = $user['Signature'] ?? '';
+        if (is_string($blob) && preg_match('/^[0-9a-fA-F]+$/', str_replace('0x', '', $blob))) {
+            $blob = hex2bin(str_replace('0x', '', $blob));
+        }
+
         $data = [
             'Form_ID' => $Form_ID,
             'UID'     => $user['UID'] ?? '',
             'ApproveDate'    => date('Y-m-d'),
-            'Signature' => $user['Signature'] ?? '',
+            'Signature' => $blob ?? '',
             'SignatureMime' => $user['SignatureMime'] ?? '',
             'IsApproved' => 0,
         ];
@@ -132,7 +144,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report History</title>
+    <title>Approving Report</title>
     <link rel="icon" type="image/x-icon" href="../- Image/BEW-Logo.ico">
     
     <link rel="stylesheet" href="RequestApproving Folder/RequestApproving.css">
@@ -160,7 +172,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <button class="button searchBtn" id="completeBtn" onclick="filterStatus('อนุมัติแล้ว')"><p class="buttonLabel">อนุมัติแล้ว</p></button>
                     </div>
                     <div id="tableContainer">
-                        <table id="historyTable">
+                        <table id="approvingTable">
                             <tr>
                                 <th class="dateCol">วันที่</th>
                                 <th class="userCol">ผู้ร้องขอ</th>
@@ -179,6 +191,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                             $requester = (!empty($requesterData)) ? $requesterData[0] : null;
                                             echo $requester['Firstname'] . ' ' . $requester['Lastname'] ?? 'ไม่พบข้อมูล';
                                         ?>
+                                        <br>แผนก <?= $requester['Section'] ?? 'ไม่พบข้อมูล' ?>
                                     </td>
                                     <td class="fixCol">
                                         <ul class="ulTable">

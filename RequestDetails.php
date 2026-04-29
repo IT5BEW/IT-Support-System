@@ -83,6 +83,10 @@ function getStepClass($stepNumber, $currentStatus) {
     <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <script src="https://unpkg.com/pdf-lib@1.17.1"></script>
+    <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1"></script>
+    <script src="https://unpkg.com/downloadjs@1.4.7"></script>
 </head>
 <body>
     <main>
@@ -158,7 +162,7 @@ function getStepClass($stepNumber, $currentStatus) {
                                     <p style="margin: 0;"><b style="font-weight: bold;">ลายเซ็น:</b></p>
                                     <div style="width: 100%;">
                                         <?php if ($detailReport['UseSignature'] && !empty($detailReport['Signature'])): ?>
-                                            <img src="<?= blob_to_data_uri($detailReport['Signature'] ?? null, $detailReport['SignatureMime'] ?? null) ?>" alt="Signature Image" style="object-fit: contain; max-width: 250px; max-height: 80px;">
+                                            <img src="<?= blob_to_data_uri($detailReport['Signature'] ?? null, $detailReport['SignatureMime'] ?? null) ?>" alt="Signature Image" style="object-fit: contain; max-width: 200px; max-height: 80px;">
                                         <?php else: ?>
                                             <ul style="margin: 0 0 10px;">
                                                 <li>ใช้ชื่อจริง: <?php echo ($detailUser['Firstname'] ?? 'ไม่มีชื่อผู้ใช้') . ' ' . ($detailUser['Lastname'] ?? 'ไม่มีนามสกุล'); ?></li>
@@ -183,6 +187,12 @@ function getStepClass($stepNumber, $currentStatus) {
                                             <li>ผู้อนุมัติ: <?=$detailApproveUser ? $detailApproveUser['Firstname'] . ' ' . $detailApproveUser['Lastname'] : 'ไม่ทราบ'?></li>
                                             <li>สถานะ: <?=$detailApprove['IsApproved'] ? 'อนุมัติ' : 'ไม่อนุมัติ'?></li>
                                             <li>วันที่: <?= $detailApprove['ApproveDate'] ?? 'ไม่ทราบ' ?></li>
+                                            <li>ลายเซ็น: <br>
+                                                <?php if (!empty($detailApprove['Signature'])): ?>
+                                                    <img src="<?= blob_to_data_uri($detailApprove['Signature'] ?? null, $detailApprove['SignatureMime'] ?? null) ?>" alt="Approver Signature" style="object-fit: contain; max-width: 200px; max-height: 80px;">
+                                                <?php else: ?>
+                                                    ไม่มีลายเซ็น
+                                                <?php endif ?>
                                         </ul>
                                     <?php else: ?>
                                         <i class="fa-solid fa-circle-info"></i> รอการอนุมัติจากหัวหน้าแผนก
@@ -207,14 +217,18 @@ function getStepClass($stepNumber, $currentStatus) {
                         <h2 style="font-weight: bold; margin:0 0 10px;">4. รายละเอียดการแก้ไข</h2>
                     </div>
 
-                    <div style="display: flex; gap: 15px;">
-                        <button type="button" value="Back" class="button" id="backButton" onclick="history.back()" style="margin-top: 25px;">
+                    <div id="buttonContainer">
+                        <button type="button" value="Back" class="button" id="backButton" onclick="history.back()">
                             <i class="fa-solid fa-arrow-left FormConfirmIcon"></i>
                             <p class="FormConfirmLabel">กลับไป</p>
                         </button>
-                        <button type="button" value="Home" class="button" id="homeButton" onclick="window.location.href='Home.php'" style="margin-top: 25px;">
+                        <button type="button" value="Home" class="button" id="homeButton" onclick="window.location.href='Home.php'" >
                             <i class="fa-solid fa-house FormConfirmIcon"></i>
                             <p class="FormConfirmLabel">กลับหน้าหลัก</p>
+                        </button>
+                        <button type="button" value="Download" class="button" id="downloadButton" onclick="DownloadForm(reportData)" style="margin-left: auto;">
+                            <i class="fa-solid fa-download FormConfirmIcon"></i>
+                            <p class="FormConfirmLabel">ดาวน์โหลด</p>
                         </button>
                     </div>
 
@@ -222,6 +236,39 @@ function getStepClass($stepNumber, $currentStatus) {
             </div>
         </section>
     </main>
+
+    <script>
+        // ดึงค่าจาก PHP Variables ที่คุณมีอยู่แล้ว มาใส่ใน Object
+        const reportData = {
+            Date: "<?= $detailReport['Date'] ?? '' ?>",
+        // ข้อมูลผู้ใช้
+            // ข้อมูลคอมพิวเตอร์
+            EquipmentID: "<?= $detailComp['Equipment_ID'] ?? 'ไม่มีคอมพิวเตอร์' ?>",
+            ComName: "<?= $detailComp['ComName'] ?? 'ไม่มีชื่อคอมพิวเตอร์' ?>",
+            User: "<?= $detailUser['Firstname'] ?? 'ไม่มีชื่อผู้ใช้' ?>",
+            Section: "<?= $detailReport['Section'] ?? 'ไม่มีแผนก' ?>",
+            // Checkboxes (แปลงเป็น boolean)
+            FixCom: <?= $detailReport['FixCom'] == "1" ? 'true' : 'false' ?>,
+            FixETC: <?= $detailReport['FixETC'] == "1" ? 'true' : 'false' ?>,
+            ReInstall: <?= $detailReport['ReInstall'] == "1" ? 'true' : 'false' ?>,
+            Broken: <?= $detailReport['Broken'] == "1" ? 'true' : 'false' ?>,
+            ETC: <?= $detailReport['ETC'] == "1" ? 'true' : 'false' ?>,
+            ETCText: "<?= $detailReport['ETCText'] ?? '' ?>",
+            // เหตุผลการแจ้งซ่อม
+            Cause1: "<?= $detailReport['CauseText1'] ?? '' ?>",
+            Cause2: "<?= $detailReport['CauseText2'] ?? '' ?>",
+            Cause3: "<?= $detailReport['CauseText3'] ?? '' ?>",
+            UseSignature: <?= $detailReport['UseSignature'] == "1" ? 'true' : 'false' ?>,
+            Signature: "<?= !empty($detailReport['Signature']) ? base64_encode(hex2bin(str_replace('0x', '', $detailReport['Signature']))) : '' ?>",
+            SignatureMime: "<?= $detailReport['SignatureMime'] ?? 'image/png' ?>",
+        // ข้อมูลการอนุมัติ
+            ApproveStatus: <?= $detailApprove ? (($detailApprove['IsApproved']) ? 'true' : 'false') : 'false' ?>,        
+            ApproveSignature: "<?= !empty($detailApprove['Signature']) ? base64_encode(hex2bin(str_replace('0x', '', $detailApprove['Signature']))) : '' ?>",
+            ApproveSignatureMime: "<?= $detailApprove['SignatureMime'] ?? 'image/png' ?>",
+            ApproveDate: "<?= $detailApprove['ApproveDate'] ?? '' ?>"
+        };
+    </script>
+
     <script src="RequestDetails Folder/RequestDetails.js"></script>
 </body>
 </html>

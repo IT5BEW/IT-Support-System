@@ -12,6 +12,8 @@
     --darkhome: #004DC7;
     --back: #94A3B8;
     --darkback:	#64748B;
+    --download: #06B6D4;
+    --darkdownload: #0891B2;
 }
 
 *{
@@ -129,18 +131,27 @@ html, body{
     padding: 10px;
 }
 
+#buttonContainer{
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.button i {color: white; font-size: x-large; margin: auto 0;}
+.button p {color: white; font-size: large; margin: 5px 0;}
+
 #homeButton{border: 1px solid var(--home); background-color: var(--home); cursor: pointer; padding: 10px;}
-#homeButton i {color: white; font-size: x-large; margin: auto;}
-#homeButton p {color: white; font-size: large; margin: 5px 0;}
 #homeButton:hover{border: 1px solid var(--darkhome); background-color: var(--darkhome);}
 
 #backButton{border: 1px solid var(--back); background-color: var(--back); cursor: pointer; padding: 10px;}
-#backButton i {color: white; font-size: x-large; margin: auto;}
-#backButton p {color: white; font-size: large; margin: 5px 0;}
 #backButton:hover{border: 1px solid var(--darkback); background-color: var(--darkback);}
+
+#downloadButton{border: 1px solid var(--download); background-color: var(--download); cursor: pointer; padding: 10px;}
+#downloadButton:hover{border: 1px solid var(--darkdownload); background-color: var(--darkdownload);}
 
 @media screen and (max-width: 875px){
     h2{text-align: center;}
+    .FormInfoLeft, .FormInfoRight {width: auto;}
     .mainContainer{padding: 20px;}
     .progressbar li {font-size: 14px;}
     .progressbar li::before {
@@ -151,4 +162,6 @@ html, body{
     .progressbar li::after {top: 15px;}
     .FormInfoContainer {flex-direction: column;}
     .FormInfoItem{padding: 0;}
+    #buttonContainer{flex-direction: column; gap: 10px;}
+    .button {width: 100%; justify-content: center;}
 }

@@ -539,7 +539,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <?php if (!empty($user['Signature'])): ?>
                                         <img src="<?= blob_to_data_uri($user['Signature'] ?? null, $user['SignatureMime'] ?? null) ?>" style="max-height: 80px; display: block; max-width: 225px;">
                                     <?php else: ?>
-                                        <input type="file" id="signature" name="signature" style="width: 100%; height: auto;" accept="image/*" onchange="previewImage(event)" />
+                                        <input type="file" id="signature" name="signature" style="width: 100%; height: auto;" accept="image/png, image/jpeg" onchange="previewImage(event)" />
                                         <img id="output-image" style="max-height: 80px; display: block; max-width: 225px; margin-top: 10px; display: none;">
                                     <?php endif; ?>
                                 </div>
