@@ -116,6 +116,9 @@ document.querySelectorAll('.limit-width').forEach(el => {
   restrictInputByWidth(el);
 });
 
+ele = document.getElementById("ETCText")
+if(ele){restrictInputByWidth(ele, 100);}
+
 document.getElementById("mainForm")?.addEventListener("submit", function(event) {
   const submitter = event.submitter;
 

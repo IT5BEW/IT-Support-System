@@ -15,6 +15,11 @@ function hidePass(id, eyeid) {
 }
 
 document.getElementById("passForm")?.addEventListener("submit", function(event) {
+    const buttonPressed = event.submitter; // ดึงปุ่มที่ถูกกดมา
+
+    // เช็คจากชื่อ (name), id หรือข้อความบนปุ่มก็ได้
+    if (buttonPressed && buttonPressed.name === "reset_password") {return;}
+
     // ดึง Element <p> ทั้งหมดมาเตรียมไว้
     const p1 = document.getElementById("check1");
     const p2 = document.getElementById("check2");

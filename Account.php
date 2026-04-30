@@ -131,6 +131,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
+    if (isset($_POST['reset_password'])) {
+        $user_id = $_POST['user_id'] ?? $user['User_ID'];
+
+        $key = array_search($user_id, array_column($datas ?? [], 'User_ID'));
+        $target_user = ($key !== false) ? $datas[$key] : $user;
+
+        $data = ['Password' => password_hash('1234', PASSWORD_DEFAULT),];
+        
+        $status = 0; 
+        $status = db_update('Users', $data, ['User_ID' => $target_user['User_ID']]) ? 200 : 500;
+
+        if ($status >= 200 && $status < 300) {$_SESSION['flash_message'] = "รีเซ็ตรหัสผ่านของ " . $target_user['User_ID'] . " สำเร็จ รหัสผ่านคือ: 1234";} 
+        else {$_SESSION['flash_message'] = "เกิดข้อผิดพลาดในการบันทึกข้อมูล (Status: $status)";}
+        
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
+    }
+
     if (isset($_POST['upload_signature'])) {
         $user_id = $_POST['user_id'] ?? $user['User_ID'];
         // หาข้อมูลของคนที่จะถูกอัปเดตจาก $datas
@@ -520,10 +538,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <p class="checkedText" id="check2" <?= $error_wrong_pass ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> รหัสผ่านไม่ถูกต้อง</p>
                             <p class="checkedText" id="check3" <?= $error_mismatch ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> กรุณายืนยันรหัสผ่านให้ตรงกัน</p>
                             <p class="checkedText" id="check4" <?= $error_match_pass ? '' : 'hidden' ?>><i class="fa-solid fa-circle-info"></i> รหัสผ่านใหม่ต้องไม่ตรงกับรหัสผ่านปัจจุบัน</p>
-                            <button type="submit" value="Submit" class="button" id="passButton" name="change_password">
-                                <i class="fa-solid fa-key"></i>
-                                <p class="buttonLabel">แก้ไขรหัสผ่าน</p>
-                            </button>
+                            <div id="passButtonContainer">
+                                <button type="submit" value="Submit" class="button" id="passButton" name="change_password">
+                                    <i class="fa-solid fa-key"></i>
+                                    <p class="buttonLabel">แก้ไขรหัสผ่าน</p>
+                                </button>
+                                <button type="submit" value="Reveal" class="button" id="resetPassButton" name="reset_password" onclick="return confirm('คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตรหัสผ่านของผู้ใช้?');">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                    <p class="buttonLabel">รีเซ็ตรหัสผ่าน</p>
+                                </button>
+                            </div>
                         </form>
 
                         <hr style="margin:25px 0; border: 1px solid #e2e8f0">       

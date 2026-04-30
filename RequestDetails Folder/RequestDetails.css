@@ -116,9 +116,12 @@ html, body{
   border: 1px solid rgba(11, 107, 211, 0.35);
   overflow-wrap: break-word;
 }
-.FormInfoContainer {display: flex; gap: 20px; width: fit-content;}
+.FormInfoContainer {display: flex; gap: 20px; width: 100%;}
 .FormInfoLeft, .FormInfoRight {width: 50%;}
 .FormInfoItem{padding: 0 20px;}
+
+.FormRowContainer {display: flex; gap: 20px; width: 100%;}
+.FormRowLeft, .FormRowRight {width: 50%; width: calc(50% - 40px);}
 
 .button {
     display: flex;
@@ -161,7 +164,13 @@ html, body{
     }
     .progressbar li::after {top: 15px;}
     .FormInfoContainer {flex-direction: column;}
+    .FormInfoContainer {gap: 0px;}
     .FormInfoItem{padding: 0;}
     #buttonContainer{flex-direction: column; gap: 10px;}
     .button {width: 100%; justify-content: center;}
+}
+
+@media screen and (max-width: 625px){
+  .FormRowContainer {flex-direction: column;}
+  .FormRowLeft, .FormRowRight {width: auto;}
 }

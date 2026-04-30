@@ -19,6 +19,8 @@
     --darkred: #dc2626;
     --home: #0062FF;
     --darkhome: #004DC7;
+    --reveal: #94A3B8;
+    --darkreveal:	#64748B;
 }
 
 *{
@@ -58,7 +60,7 @@ html, body{
 .formItemRow{display: flex; align-items: center; position: relative; height: 36px;}
 .formLabel{font-size: 18px; margin: 0; width: 20%;}
 .formInput{width: 50%; font-size: 18px;}
-.formPassInput{width: 87%;}
+.formPassInput{width: 85%;}
 .radioInput{width: 50%;}
 #radioFormLabel{width: 35%;}
 #radioFormInput{display: flex; width: 65%;}
@@ -125,6 +127,9 @@ html, body{
 #homeButton{border: 1px solid var(--home); background-color: var(--home); cursor: pointer;}
 #homeButton i, #homeButton p {color: white;}
 #homeButton:hover{border: 1px solid var(--darkhome); background-color: var(--darkhome);}
+#resetPassButton{border: 1px solid var(--reveal); background-color: var(--reveal); cursor: pointer;}
+#resetPassButton i, #resetPassButton p {color: white;}
+#resetPassButton:hover{border: 1px solid var(--darkreveal); background-color: var(--darkreveal);}
 
 input, select, textarea{
     font-size: 18px; 
@@ -199,6 +204,7 @@ input[type="radio"]:checked::before {
   transform: scale(1);
 }
 
+#passButtonContainer{display: flex;gap: 15px;}
 .passwordbutton{
     width: 10%;
     color: white;
@@ -237,3 +243,5 @@ input[type="radio"]:checked::before {
         left: 0%;
     }
 }
+
+@media screen and (max-width: 450px){#passButtonContainer{display: block;}}
